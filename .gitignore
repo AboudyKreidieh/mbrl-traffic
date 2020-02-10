@@ -1,0 +1,8 @@
+*.csv
+*.pyc
+mbrl_traffic.egg*
+__pycache__
+*zip
+run_tests.sh
+debug
+.idea
