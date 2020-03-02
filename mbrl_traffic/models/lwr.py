@@ -31,13 +31,13 @@ class LWRModel(Model):
     stream_model : str
         the name of the macroscopic stream model used to denote relationships
         between the current speed and density. Must be one of {"greenshield"}
+    lam : float
+        exponent of the Green-shield velocity function
     boundary_conditions : str or dict
         conditions at road left and right ends; should either dict or string
         ie. {'constant_both': ((density, speed),(density, speed) )}, constant
         value of both ends loop, loop edge values as a ring extend_both,
         extrapolate last value on both ends
-    lam : float
-        exponent of the Green-shield velocity function
     rho_crit : float
         critical density defined by the Green-shield Model
     """
@@ -55,6 +55,7 @@ class LWRModel(Model):
                  v_max,
                  v_max_max,
                  stream_model,
+                 lam,
                  boundary_conditions):
         """Instantiate the LWR model object.
 
@@ -91,6 +92,8 @@ class LWRModel(Model):
             the name of the macroscopic stream model used to denote
             relationships between the current speed and density. Must be one of
             {"greenshield"}
+        lam : float
+            exponent of the Green-shield velocity function
         boundary_conditions : str or dict
             conditions at road left and right ends; should either dict or
             string ie. {'constant_both': ((density, speed),(density, speed) )},
@@ -107,10 +110,9 @@ class LWRModel(Model):
         self.v_max = v_max
         self.v_max_max = v_max_max
         self.stream_model = stream_model
+        self.lam = lam
         self.boundary_conditions = boundary_conditions
 
-        # lam is an exponent of the Green-shield velocity function
-        self.lam = 1
         # critical density defined by the Green-shield Model
         self.rho_crit = self.rho_max / 2
 
@@ -127,7 +129,7 @@ class LWRModel(Model):
         rho_tp1 = self._ibvp(rho_t)
 
         # Compute the new equilibrium speeds.
-        v_tp1 = self._speed_info(rho_tp1)
+        v_tp1 = self._v_eq(rho_tp1)
 
         # Return the new observation.
         return np.concatenate((rho_tp1, v_tp1))
@@ -161,17 +163,17 @@ class LWRModel(Model):
         # Godunov numerical flux
         f = self._godunov_flux(rho_t)
 
-        fm = np.insert(f[0:len(f) - 1], 0, f[0])
+        fm = np.insert(f[:-1], 0, f[0])
 
         # Godunov scheme (updating rho_t)
-        rho_t = rho_t - step * (f - fm)
+        rho_tp1 = rho_t - step * (f - fm)
 
         # Update loop boundary conditions for ring-like experiment.
         if self.boundary_conditions == "loop":
-            boundary_left = rho_t[len(rho_t) - 1]
-            boundary_right = rho_t[len(rho_t) - 2]
-            rho_t = np.insert(
-                np.append(rho_t[1:len(rho_t) - 1], boundary_right),
+            boundary_left = rho_tp1[-1]
+            boundary_right = rho_tp1[-2]
+            rho_tp1 = np.insert(
+                np.append(rho_tp1[1:-1], boundary_right),
                 0,
                 boundary_left
             )
@@ -179,10 +181,10 @@ class LWRModel(Model):
         # Update boundary conditions by extending/extrapolating boundaries
         # (reduplication).  TODO: is this different from doing nothing?
         if self.boundary_conditions == "extend_both":
-            boundary_left = rho_t[0]
-            boundary_right = rho_t[len(rho_t) - 1]
-            rho_t = np.insert(
-                np.append(rho_t[1:len(rho_t) - 1], boundary_right),
+            boundary_left = rho_tp1[0]
+            boundary_right = rho_tp1[-1]
+            rho_tp1 = np.insert(
+                np.append(rho_tp1[1:-1], boundary_right),
                 0,
                 boundary_left
             )
@@ -192,13 +194,13 @@ class LWRModel(Model):
             if list(self.boundary_conditions.keys())[0] == "constant_both":
                 boundary_left = self.boundary_conditions["constant_both"][0]
                 boundary_right = self.boundary_conditions["constant_both"][1]
-                rho_t = np.insert(
-                    np.append(rho_t[1:len(rho_t) - 1], boundary_right),
+                rho_tp1 = np.insert(
+                    np.append(rho_tp1[1:-1], boundary_right),
                     0,
                     boundary_left
                 )
 
-        return rho_t
+        return rho_tp1
 
     def _godunov_flux(self, rho_t):
         """Calculate the Godunov numerical flux vector of our data.
@@ -215,8 +217,8 @@ class LWRModel(Model):
         """
         # Collect some relevant variables.
         rho_crit = self.rho_crit
-        q_max = rho_crit * self._speed_info(rho_crit)
-        v_eq = self._speed_info(rho_t)
+        q_max = rho_crit * self._v_eq(rho_crit)
+        v_eq = self._v_eq(rho_t)  # TODO: is this speed or flux?
 
         # Compute the demand.
         d = rho_t * v_eq * (rho_t < rho_crit) + q_max * (rho_t >= rho_crit)
@@ -230,7 +232,7 @@ class LWRModel(Model):
         # Godunov flux
         return np.minimum(d, s)
 
-    def _speed_info(self, density):
+    def _v_eq(self, rho_t):
         """Implement the Greenshields model for the equilibrium velocity.
 
         Greenshields, B. D., Ws Channing, and Hh Miller. "A study of traffic
@@ -239,7 +241,7 @@ class LWRModel(Model):
 
         Parameters
         ----------
-        density : array_like
+        rho_t : array_like
             densities of every specified point on the road
 
         Returns
@@ -247,7 +249,7 @@ class LWRModel(Model):
         array_like
             equilibrium velocity at every specified point on road
         """
-        return self.v_max * ((1 - (density / self.rho_max)) ** self.lam)
+        return self.v_max * ((1 - (rho_t / self.rho_max)) ** self.lam)
 
     def get_td_map(self):
         """See parent class."""
