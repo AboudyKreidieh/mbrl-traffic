@@ -39,6 +39,7 @@ before_script:
   - pydocstyle . --convention=numpy
 
 script:
+  - pip install -e .
   - nose2 --with-coverage
 
 after_success:
