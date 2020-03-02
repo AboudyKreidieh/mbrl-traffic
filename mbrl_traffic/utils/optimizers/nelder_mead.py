@@ -1,15 +1,9 @@
-"""TODO."""
+"""Script containing the Nelder Mead optimizer."""
 from mbrl_traffic.utils.optimizers.base import Optimizer
 
 
 class NelderMead(Optimizer):
-    """
-
-    Attributes
-    ----------
-    TODO
-        TODO
-    """
+    """Nelder Mead optimizer object."""
 
     def __init__(self,
                  param_low,

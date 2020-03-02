@@ -1,15 +1,9 @@
-"""TODO."""
+"""Script containing the cross-entropy method optimizer."""
 from mbrl_traffic.utils.optimizers.base import Optimizer
 
 
 class CrossEntropyMethod(Optimizer):
-    """
-
-    Attributes
-    ----------
-    TODO
-        TODO
-    """
+    """Cross-entropy method optimizer object."""
 
     def __init__(self,
                  param_low,

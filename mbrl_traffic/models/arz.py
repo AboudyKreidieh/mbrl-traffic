@@ -371,8 +371,8 @@ class ARZModel(Model):
 
         # updating relative flow
         # right hand side constant -> we use fsolve to find our roots
-        rhs = q_t + (step * (fy_lower_half - fy_higher_half)) \
-            + (self.dt / self.tau) * rho_tp1 * self._v_eq(rho_tp1)
+        # rhs = q_t + (step * (fy_lower_half - fy_higher_half)) \
+        #     + (self.dt / self.tau) * rho_tp1 * self._v_eq(rho_tp1)
         q_tp1 = fsolve(self.myfun, q_t)  # FIXME
 
         rho_tp1 = rho_tp1[1:-1]

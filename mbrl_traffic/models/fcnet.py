@@ -3,7 +3,7 @@ from mbrl_traffic.models.base import Model
 
 
 class FeedForwardModel(Model):
-    """TODO
+    """Feed-forward network model object.
 
     Attributes
     ----------

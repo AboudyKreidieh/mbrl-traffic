@@ -1,5 +1,4 @@
 """Flow-specific parameters for the multi-lane ring scenario."""
-
 from flow.controllers import IDMController, ContinuousRouter
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
 from flow.core.params import VehicleParams
@@ -18,9 +17,9 @@ NUM_LANES = 4
 vehicles = VehicleParams()
 vehicles.add(
     veh_id="idm",
-    # acceleration_controller=(IDMController, {
-    #     "noise": 0.2,
-    # }),
+    acceleration_controller=(IDMController, {
+        "noise": 0.2,
+    }),
     routing_controller=(ContinuousRouter, {}),
     car_following_params=SumoCarFollowingParams(
         min_gap=0,

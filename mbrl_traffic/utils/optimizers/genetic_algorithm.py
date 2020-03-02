@@ -1,4 +1,4 @@
-"""TODO."""
+"""Script containing the genetic algorithm optimizer."""
 import numpy as np
 import heapq
 
@@ -159,14 +159,14 @@ class GeneticAlgorithm(Optimizer):
 
         Parameters
         ----------
-        population : TODO
+        population : array_like
             TODO
-        fitness : TODO
+        fitness : array_like
             TODO
 
         Returns
         -------
-        TODO
+        array_like
             TODO
         """
         selection = np.empty((len(self.param_low), self.population_size))
@@ -181,13 +181,13 @@ class GeneticAlgorithm(Optimizer):
         elif self.selection_method == "roulette":
             # Compute the cumulative summations of fitness, averaged so that
             # they sum to 1.
-            total_fitness = sum(fitness)
-            cum_sum = np.cumsum(fitness) / total_fitness
+            # total_fitness = sum(fitness)
+            # cum_sum = np.cumsum(fitness) / total_fitness
 
             # Choose the parameters randomly weighted by the fitness of the
-            # individuals in the population.
+            # individuals in the population.  # FIXME
             idx = np.random.uniform(0, 1, selection_size)
-            idx = np.array(np.searchsorted(idx[i]) - 1 for i in idx.size)  # FIXME
+            idx = np.array(np.searchsorted(idx[i]) - 1 for i in idx.size)
             selection[:, len(idx)] = population[:, idx]
 
         elif self.selection_method == "random":
@@ -202,12 +202,12 @@ class GeneticAlgorithm(Optimizer):
 
         Parameters
         ----------
-        selection : TODO
+        selection : array_like
             TODO
 
         Returns
         -------
-        TODO
+        array_like
             TODO
         """
         if self.pairing_method == "fittest":
@@ -224,12 +224,12 @@ class GeneticAlgorithm(Optimizer):
 
         Parameters
         ----------
-        selection : TODO
+        selection : array_like
             TODO
 
         Returns
         -------
-        TODO
+        array_like
             TODO
         """
         if self.mating_method == "one-point":
@@ -243,12 +243,12 @@ class GeneticAlgorithm(Optimizer):
 
         Parameters
         ----------
-        selection : TODO
+        selection : array_like
             TODO
 
         Returns
         -------
-        TODO
+        array_like
             TODO
         """
         if self.mutation_method == "gauss":
