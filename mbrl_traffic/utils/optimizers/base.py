@@ -35,7 +35,7 @@ class Optimizer(object):
         self.param_high = param_high
         self.fitness_fn = fitness_fn
 
-    def solve(self, num_steps=1, termination_fn=None):
+    def solve(self, num_steps=1000, termination_fn=None):
         """Perform the training procedure.
 
         Parameters
