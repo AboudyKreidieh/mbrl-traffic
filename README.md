@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.com/AboudyKreidieh/mbrl-traffic.svg?branch=master)](https://travis-ci.com/AboudyKreidieh/mbrl-traffic)
+[![Coverage Status](https://coveralls.io/repos/github/AboudyKreidieh/mbrl-traffic/badge.svg?branch=master)](https://coveralls.io/github/AboudyKreidieh/mbrl-traffic?branch=master)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/AboudyKreidieh/mbrl-traffic/blob/master/LICENSE)
+
 # mbrl-traffic
 Macroscopic model-based reinforcement learning framework for control of mixed-autonomy traffic
 
