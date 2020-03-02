@@ -1,5 +1,4 @@
 """Script containing the base policy object."""
-import tensorflow as tf
 
 
 class Policy(object):

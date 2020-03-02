@@ -16,9 +16,11 @@ class Optimizer(object):
         the maximum value for each parameter
     fitness_fn : function
         the fitness function. Takes as input a set of values for each parameter
+    verbose : int
+        the verbosity flag
     """
 
-    def __init__(self, param_low, param_high, fitness_fn):
+    def __init__(self, param_low, param_high, fitness_fn, verbose=2):
         """Instantiate the base optimizer.
 
         Parameters
@@ -30,10 +32,13 @@ class Optimizer(object):
         fitness_fn : function
             the fitness function. Takes as input a set of values for each
             parameter
+        verbose : int
+            the verbosity flag
         """
         self.param_low = param_low
         self.param_high = param_high
         self.fitness_fn = fitness_fn
+        self.verbose = verbose
 
     def solve(self, num_steps=1000, termination_fn=None):
         """Perform the training procedure.

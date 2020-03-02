@@ -1,3 +1,4 @@
+"""TODO."""
 import numpy as np
 import heapq
 
@@ -48,6 +49,7 @@ class GeneticAlgorithm(Optimizer):
                  param_low,
                  param_high,
                  fitness_fn,
+                 verbose=2,
                  population_size=100,
                  selection_method="fittest",
                  pairing_method="fittest",
@@ -66,6 +68,8 @@ class GeneticAlgorithm(Optimizer):
         fitness_fn : function
             the fitness function. Takes as input a set of values for each
             parameter
+        verbose : int
+            the verbosity flag
         population_size : int
             the number of individual parameter sets used during the
             optimization procedure
@@ -101,7 +105,8 @@ class GeneticAlgorithm(Optimizer):
         super(GeneticAlgorithm, self).__init__(
             param_low=param_low,
             param_high=param_high,
-            fitness_fn=fitness_fn
+            fitness_fn=fitness_fn,
+            verbose=verbose
         )
         self.population_size = population_size
         self.selection_method = selection_method
