@@ -2,8 +2,8 @@
 import unittest
 
 
-class TestModel(unittest.TestCase):
-    """Tests the Model object."""
+class TestOptimizer(unittest.TestCase):
+    """Tests the Optimizer object."""
 
     def setUp(self):
         pass  # TODO
@@ -16,8 +16,8 @@ class TestModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestARZModel(unittest.TestCase):
-    """Tests the ARZModel object."""
+class TestNelderMead(unittest.TestCase):
+    """Tests the NelderMead object."""
 
     def setUp(self):
         pass  # TODO
@@ -30,8 +30,8 @@ class TestARZModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestFeedForwardModel(unittest.TestCase):
-    """Tests the FeedForwardModel object."""
+class TestGeneticAlgorithm(unittest.TestCase):
+    """Tests the GeneticAlgorithm object."""
 
     def setUp(self):
         pass  # TODO
@@ -44,22 +44,8 @@ class TestFeedForwardModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestLWRModel(unittest.TestCase):
-    """Tests the LWRModel object."""
-
-    def setUp(self):
-        pass  # TODO
-
-    def tearDown(self):
-        pass  # TODO
-
-    def test_pass(self):
-        """TODO."""
-        pass  # TODO
-
-
-class TestNoOpModel(unittest.TestCase):
-    """Tests the NoOpModel object."""
+class TestCrossEntropyMethod(unittest.TestCase):
+    """Tests the CrossEntropyMethod object."""
 
     def setUp(self):
         pass  # TODO

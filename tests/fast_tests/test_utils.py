@@ -2,8 +2,8 @@
 import unittest
 
 
-class TestModel(unittest.TestCase):
-    """Tests the Model object."""
+class TestMisc(unittest.TestCase):
+    """Tests the methods in mbrl_traffic/utils/misc.py."""
 
     def setUp(self):
         pass  # TODO
@@ -16,8 +16,8 @@ class TestModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestARZModel(unittest.TestCase):
-    """Tests the ARZModel object."""
+class TestReplayBuffer(unittest.TestCase):
+    """Tests the ReplayBuffer object."""
 
     def setUp(self):
         pass  # TODO
@@ -30,8 +30,8 @@ class TestARZModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestFeedForwardModel(unittest.TestCase):
-    """Tests the FeedForwardModel object."""
+class TestTfUtil(unittest.TestCase):
+    """Tests the methods in mbrl_traffic/utils/tf_util.py."""
 
     def setUp(self):
         pass  # TODO
@@ -44,22 +44,8 @@ class TestFeedForwardModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestLWRModel(unittest.TestCase):
-    """Tests the LWRModel object."""
-
-    def setUp(self):
-        pass  # TODO
-
-    def tearDown(self):
-        pass  # TODO
-
-    def test_pass(self):
-        """TODO."""
-        pass  # TODO
-
-
-class TestNoOpModel(unittest.TestCase):
-    """Tests the NoOpModel object."""
+class TestTrain(unittest.TestCase):
+    """Tests the methods in mbrl_traffic/utils/train.py."""
 
     def setUp(self):
         pass  # TODO

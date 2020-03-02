@@ -2,8 +2,8 @@
 import unittest
 
 
-class TestModel(unittest.TestCase):
-    """Tests the Model object."""
+class TestEvaluateAgent(unittest.TestCase):
+    """Tests the experiments/evaluate_agent.py script."""
 
     def setUp(self):
         pass  # TODO
@@ -16,8 +16,8 @@ class TestModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestARZModel(unittest.TestCase):
-    """Tests the ARZModel object."""
+class TestEvaluateModel(unittest.TestCase):
+    """Tests the experiments/evaluate_model.py script."""
 
     def setUp(self):
         pass  # TODO
@@ -30,8 +30,8 @@ class TestARZModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestFeedForwardModel(unittest.TestCase):
-    """Tests the FeedForwardModel object."""
+class TestSimulateMacro(unittest.TestCase):
+    """Tests the experiments/simulate_macro.py script."""
 
     def setUp(self):
         pass  # TODO
@@ -44,8 +44,8 @@ class TestFeedForwardModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestLWRModel(unittest.TestCase):
-    """Tests the LWRModel object."""
+class TestSimulateMicro(unittest.TestCase):
+    """Tests the experiments/simulate_micro.py script."""
 
     def setUp(self):
         pass  # TODO
@@ -58,8 +58,22 @@ class TestLWRModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestNoOpModel(unittest.TestCase):
-    """Tests the NoOpModel object."""
+class TestTrainAgent(unittest.TestCase):
+    """Tests the experiments/train_agent.py script."""
+
+    def setUp(self):
+        pass  # TODO
+
+    def tearDown(self):
+        pass  # TODO
+
+    def test_pass(self):
+        """TODO."""
+        pass  # TODO
+
+
+class TestTrainModel(unittest.TestCase):
+    """Tests the experiments/train_model.py script."""
 
     def setUp(self):
         pass  # TODO

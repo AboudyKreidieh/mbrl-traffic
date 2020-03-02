@@ -2,8 +2,8 @@
 import unittest
 
 
-class TestModel(unittest.TestCase):
-    """Tests the Model object."""
+class TestPolicy(unittest.TestCase):
+    """Tests the Policy object."""
 
     def setUp(self):
         pass  # TODO
@@ -16,8 +16,8 @@ class TestModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestARZModel(unittest.TestCase):
-    """Tests the ARZModel object."""
+class TestKShootPolicy(unittest.TestCase):
+    """Tests the KShootPolicy object."""
 
     def setUp(self):
         pass  # TODO
@@ -30,8 +30,8 @@ class TestARZModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestFeedForwardModel(unittest.TestCase):
-    """Tests the FeedForwardModel object."""
+class TestNoOpPolicy(unittest.TestCase):
+    """Tests the NoOpPolicy object."""
 
     def setUp(self):
         pass  # TODO
@@ -44,8 +44,8 @@ class TestFeedForwardModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestLWRModel(unittest.TestCase):
-    """Tests the LWRModel object."""
+class TestPPOPolicy(unittest.TestCase):
+    """Tests the PPOPolicy object."""
 
     def setUp(self):
         pass  # TODO
@@ -58,8 +58,8 @@ class TestLWRModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestNoOpModel(unittest.TestCase):
-    """Tests the NoOpModel object."""
+class TestSACPolicy(unittest.TestCase):
+    """Tests the SACPolicy object."""
 
     def setUp(self):
         pass  # TODO
