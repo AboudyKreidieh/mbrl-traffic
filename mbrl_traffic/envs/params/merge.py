@@ -13,7 +13,7 @@ from flow.envs.merge import MergePOEnv, ADDITIONAL_ENV_PARAMS
 from flow.networks import MergeNetwork
 
 # inflow rate at the highway
-FLOW_RATE = 1600
+FLOW_RATE = 2000
 
 vehicles = VehicleParams()
 vehicles.add(
