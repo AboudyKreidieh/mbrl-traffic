@@ -1,7 +1,7 @@
 """Runner script for non-RL simulations in flow.
 
 Usage
-    python simulate_micro.py EXP_CONFIG --no_render
+    python simulate.py EXP_CONFIG --no_render
 """
 import argparse
 import sys
@@ -26,8 +26,7 @@ def parse_args(args):
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="Parse argument used when running a Flow simulation.",
-        epilog="python simulate_micro.py EXP_CONFIG --num_runs INT "
-               "--no_render")
+        epilog="python simulate.py EXP_CONFIG --num_runs INT --no_render")
 
     # required input parameters
     parser.add_argument(

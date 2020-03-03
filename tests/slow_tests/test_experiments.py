@@ -30,8 +30,8 @@ class TestEvaluateModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestSimulateMacro(unittest.TestCase):
-    """Tests the experiments/simulate_macro.py script."""
+class TestSimulate(unittest.TestCase):
+    """Tests the experiments/simulate.py script."""
 
     def setUp(self):
         pass  # TODO
@@ -39,21 +39,19 @@ class TestSimulateMacro(unittest.TestCase):
     def tearDown(self):
         pass  # TODO
 
-    def test_pass(self):
+    def test_parse_args(self):
         """TODO."""
         pass  # TODO
 
-
-class TestSimulateMicro(unittest.TestCase):
-    """Tests the experiments/simulate_micro.py script."""
-
-    def setUp(self):
+    def test_run_ring(self):
+        """TODO."""
         pass  # TODO
 
-    def tearDown(self):
+    def test_run_merge(self):
+        """TODO."""
         pass  # TODO
 
-    def test_pass(self):
+    def test_run_highway(self):
         """TODO."""
         pass  # TODO
 
