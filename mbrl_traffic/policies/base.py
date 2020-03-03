@@ -50,7 +50,7 @@ class Policy(object):
         self.sess = sess
         self.ob_space = ob_space
         self.ac_space = ac_space
-        self.model_tf = model
+        self.model = model
         self.replay_buffer = replay_buffer
         self.verbose = verbose
 
