@@ -125,7 +125,7 @@ class LWRModel(Model):
         del action  # actions are not currently used
 
         # Advance the density values by one step.
-        rho_t = obs[:len(obs)/2]
+        rho_t = obs[:int(len(obs)/2)]
         rho_tp1 = self._ibvp(rho_t)
 
         # Compute the new equilibrium speeds.

@@ -188,6 +188,10 @@ class ARZModel(Model):
         array_like
             velocity at every specified point on road
         """
+        # avoid division by zero error
+        mask = rho == 0
+        rho[mask] = 0.0000000001
+
         return (q / rho) + self._v_eq(rho)
 
     def _arz_solve(self, rho_t, q_t):
@@ -371,35 +375,40 @@ class ARZModel(Model):
 
         # updating relative flow
         # right hand side constant -> we use fsolve to find our roots
-        # rhs = q_t + (step * (fy_lower_half - fy_higher_half)) \
-        #     + (self.dt / self.tau) * rho_tp1 * self._v_eq(rho_tp1)
-        q_tp1 = fsolve(self.myfun, q_t)  # FIXME
-
+        rhs = q_t + (step * (fy_lower_half - fy_higher_half)) \
+            + (self.dt / self.tau) * rho_tp1 * self._v_eq(rho_tp1)
+        q_tp1 = fsolve(self.myfun, q_t, args=(self.tau, self.v_max,
+                                              self.rho_max, rho_tp1, rhs))
         rho_tp1 = rho_tp1[1:-1]
         q_tp1 = q_tp1[1:-1]
 
         return rho_tp1, q_tp1
 
-    def myfun(self, q_tp1, rho_tp1, rhs):
+    def myfun(self, q_tp1, *args):
         """Help fsolve update our relative flow data.
 
         Parameters
         ----------
         q_tp1 : array_like
             array whose values to be determined
-        rho_tp1 : array_like
-            TODO
-        rhs : array_like
-            TODO
+        args :  v_max : see parent class
+                rho_max : see parent class
+                cfl : see parent class
+                tau : see parent class
+                rho_tp1 : see parent class
+                rhs : array_like
+                    run hand side of function
 
         Returns
         -------
         array_like or tuple
             functions to be minimized/maximized based on initial values
         """
+        tau, v_max, rho_max, rho_tp1, rhs = args
+
         return q_tp1 \
-            + (self.dt / self.tau) * (rho_tp1 * self.u(rho_tp1, q_tp1)) \
-            - rhs
+            + ((self.dt / self.tau) * (rho_tp1 * self.u(rho_tp1, q_tp1)) \
+            - rhs)
 
     def update(self):
         """See parent class."""
