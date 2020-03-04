@@ -278,7 +278,7 @@ class ARZModel(Model):
                 )
 
         else:
-            raise ValueError("Unknown bounary condition: {}".format(
+            raise ValueError("Unknown boundary condition: {}".format(
                 self.boundary_conditions))
 
         return rho_tp1, q_tp1

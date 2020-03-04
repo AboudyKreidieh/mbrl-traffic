@@ -136,7 +136,7 @@ class LWRModel(Model):
 
     def update(self):
         """See parent class."""
-        pass  # FIXME
+        self.optimzier.solve()
 
     def _ibvp(self, rho_t):
         """Implement Godunov scheme for multi-populations.
@@ -218,7 +218,7 @@ class LWRModel(Model):
         # Collect some relevant variables.
         rho_crit = self.rho_crit
         q_max = rho_crit * self._v_eq(rho_crit)
-        v_eq = self._v_eq(rho_t)  # TODO: is this speed or flux?
+        v_eq = self._v_eq(rho_t)
 
         # Compute the demand.
         d = rho_t * v_eq * (rho_t < rho_crit) + q_max * (rho_t >= rho_crit)
@@ -227,7 +227,7 @@ class LWRModel(Model):
         s = rho_t * v_eq * (rho_t > rho_crit) + q_max * (rho_t <= rho_crit)
 
         # TODO: what is this doing?
-        s = np.append(s[1:], s[len(s) - 1])
+        s = np.append(s[1:], s[-1])
 
         # Godunov flux
         return np.minimum(d, s)
