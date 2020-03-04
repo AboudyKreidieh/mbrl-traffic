@@ -79,11 +79,11 @@ class ARZModel(Model):
         dt : float
             time discretization (in seconds/step)
         rho_max : float
-            maximum density term in the LWR model (in veh/m)
+            maximum density term in the model (in veh/m)
         rho_max_max : float
             maximum possible density of the network (in veh/m)
         v_max : float
-            initial speed limit of the LWR model. If not actions are provided
+            initial speed limit of the model. If not actions are provided
             during the simulation procedure, this value is kept constant
             throughout the simulation
         v_max_max : float
