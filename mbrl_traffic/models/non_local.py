@@ -10,18 +10,20 @@ def non_local():
     Tn = 1001
     x0 = np.linspace(0, 1, Nx + 1)
     dx = np.mean(np.diff(x0))
-    Tfinal = 10
+    Tfinal = 5
     dt = Tfinal / Tn
     Xfine = np.linspace(0, 1, 1001)
     Ti = []
     Qfine = []
+    all_x = []
+
     # nonlocal impact
     eta = 0.1
     a = lambda x: np.minimum(x, 1)
     b = lambda x: np.minimum(x + eta, 1)
     GAMMA_Y = lambda t, x, y: (2 * (y - x) - (y - x) ** 2 / eta) / eta
 
-    # initialdatum and boundary conditions
+    # initial datum and boundary conditions
     Q0 = lambda x: 0 * x
     u = lambda t: (t >= 0) * (t < 1) + (t >= 2) * (t < 3) + (t >= 4) * (t < 5) + (t >= 6) * (t < 7) + (t >= 8) * (t < 9)
     v = lambda t: (t >= 1) * (t < 2) + (t >= 3) * (t < 4) + (t >= 5) * (t < 6) + (t >= 7) * (t < 8) + (t >= 9) * (t < 10)
@@ -29,22 +31,19 @@ def non_local():
     # velocity function
     vel = lambda w, t, x: 1 - w
 
-    Q = Q0(x0[1:]) - Q0(x0[0:- 1]) # FIX ME
+    Q = Q0(x0[1:]) - Q0(x0[0:- 1])
     X = x0
     T = 0
 
     Nt = Tfinal / dt
-    for i in np.arange(1, (Tfinal / dt)):
-        # print(i)
-        # if Nt > 200:
-        #     if (np.mod(i, 1000) == 0):
-        #         # print(i / Nt * 100)
+    for i in np.arange(0, (Tfinal / dt)):
 
         w = integrate_nonlocal_term(GAMMA_Y, a, b, Q, X, T, v, eta)
         X = X + dt * vel(w, T, X)
 
+        # update boundary condtions here
         while min(np.diff(X)) < 1e-6:
-            ind = np.argmin(np.diff(X))
+            ind = np.argmin(np.diff(X)) # find index
             # print(ind)
             if ind > 1:
                 mq = Q[ind - 1] + Q[ind]
@@ -70,17 +69,26 @@ def non_local():
             Qfine = new_y
         else:
             Qfine = np.vstack((Qfine,new_y))
-
+            # all_x = np.vstack((all_x, Xfine))
         Ti = Ti + [T]
         # print(i > 1 & np.mod(int(i), 100) == 0)
         if (i > 1) and (np.mod(int(i), 100)) == 0:
-            # plt.clf()
+            # if all_x ==[]:
+            #     all_x = Xfine
+            # else:
+            #     all_x = np.vstack((all_x, Xfine))
+            # time_steps = np.array(Ti)
+            x = Xfine
+            # all_densities = Qfine
+            # # all_speeds = vel(Qfine,0, 0)
+            # # visualize_plots(x, all_densities, all_speeds, time_steps)
+            plt.clf()
             all_densities = Qfine
-            x_vector, y_vector = np.meshgrid(Xfine, np.array(Ti))
-            plt.contourf(x_vector, y_vector, all_densities, levels=900, cmap='jet')
+            # x_vector, y_vector = np.meshgrid(Xfine, np.array(Ti))
+            plt.contourf(x, np.array(Ti), all_densities, levels=900, cmap='jet')
             plt.colorbar(shrink=0.8)
-            # plt.clim(-5, 5)
-            plt.ylim((0, 10))
+            # # plt.clim(-5, 5)
+            plt.ylim((0, Tfinal))
             plt.xlim((0, 1))
             plt.draw()
             plt.pause(0.1)
@@ -114,12 +122,25 @@ def non_local():
 
         T = T + dt
 
+    time_steps = np.array(Ti)
+    x = Xfine
+    all_densities = Qfine
+
+    # all_speeds = vel(Qfine, 0, 0)
+    # visualize_plots(x, all_densities, all_speeds, time_steps)
+    # x_vector, y_vector = np.meshgrid(x, time_steps)
+    # plt.contourf(x, time_steps, all_densities, levels=900, cmap='jet')
+
+    # x_vector, y_vector = np.meshgrid(Xfine, np.array(Ti))
+    # plt.contourf(x_vector, y_vector, all_densities, levels=900, cmap='jet')
+    # plt.colorbar(shrink=0.8)
+    # plt.show()
+
     Z = X[1:] / 2 + X[0:-1] / 2
     D = X[1:] - X[0:-1]
     XE = X
     QD = Q / D
     QDE = QD
-    plt.show()
 
     return X, Q, Z, D
 
@@ -155,7 +176,7 @@ def visualize_plots(x, all_densities, all_speeds, time_steps):
         discrete time steps that the simulation has run for
     """
     # density plot
-    fig, plots = plt.subplots(2, figsize=(10, 10))
+    fig, plots = plt.subplots(1,2, figsize=(10, 10))
     fig.subplots_adjust(hspace=.5)
     y_vector, x_vector = np.meshgrid(x, time_steps)
     first_plot = plots[0].contourf(x_vector, y_vector, all_densities, levels=900, cmap='jet')
