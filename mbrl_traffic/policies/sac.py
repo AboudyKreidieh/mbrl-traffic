@@ -1,4 +1,4 @@
-"""TODO."""
+"""Script containing the Soft Actor Critic policy object."""
 import tensorflow as tf
 import numpy as np
 from functools import reduce
@@ -17,7 +17,9 @@ LOG_STD_MIN = -20
 
 
 class SACPolicy(Policy):
-    """TODO.
+    """Soft Actor Critic.
+
+    See: https://arxiv.org/pdf/1801.01290.pdf
 
     Attributes
     ----------
@@ -155,8 +157,14 @@ class SACPolicy(Policy):
             target entropy used when learning the entropy coefficient. If set
             to None, a heuristic value is used.
         """
-        super(SoftActorCriticPolicy, self).__init__(
-            sess, ob_space, ac_space, model, replay_buffer, verbose)
+        super(SACPolicy, self).__init__(
+            sess=sess,
+            ob_space=ob_space,
+            ac_space=ac_space,
+            model=model,
+            replay_buffer=replay_buffer,
+            verbose=verbose,
+        )
 
         self.actor_lr = actor_lr
         self.critic_lr = critic_lr

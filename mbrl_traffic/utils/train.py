@@ -124,22 +124,22 @@ PPO_POLICY_PARAMS = dict(
 
 SAC_POLICY_PARAMS = dict(
     # actor learning rate
-    actor_lr=None,
+    actor_lr=3e-4,
     # critic learning rate
-    critic_lr=None,
+    critic_lr=3e-4,
     # target update rate
-    tau=None,
+    tau=None,  # FIXME
     # discount factor
-    gamma=None,
+    gamma=None,  # FIXME
     # the size of the Neural network for the policy
-    layers=None,
+    layers=[256, 256],
     # enable layer normalisation
-    layer_norm=None,
+    layer_norm=False,
     # the activation function to use in the neural network
-    act_fun=None,
+    act_fun=tf.nn.relu,
     # specifies whether to use the huber distance function as the loss for the
     # critic. If set to False, the mean-squared error metric is used instead
-    use_huber=None,
+    use_huber=False,
     # target entropy used when learning the entropy coefficient. If set
     #  to None, a heuristic value is used.
     target_entropy=None,
@@ -151,28 +151,28 @@ SAC_POLICY_PARAMS = dict(
 # =========================================================================== #
 
 def parse_params():
-    """
+    """TODO
 
     """
-    pass
+    pass  # TODO
 
 
 def parse_algorithm_params():
-    """
+    """TODO
 
     """
-    pass
+    pass  # TODO
 
 
 def parse_policy_params():
-    """
+    """TODO
 
     """
-    pass
+    pass  # TODO
 
 
 def parse_model_params(parser):
-    """
+    """TODO
 
     """
     # choose the model
@@ -297,7 +297,7 @@ def get_algorithm_params_from_args(args):
     dict
         the parameters for the algorithm as specified in the command line
     """
-    pass
+    pass  # TODO
 
 
 def get_policy_params_from_args(args):
@@ -320,8 +320,8 @@ def get_policy_params_from_args(args):
     ValueError
         if an unknown policy type is specified
     """
-    policy_cls = None
-    policy_params = None
+    policy_cls = None  # TODO
+    policy_params = None  # TODO
 
     return policy_cls, policy_params
 

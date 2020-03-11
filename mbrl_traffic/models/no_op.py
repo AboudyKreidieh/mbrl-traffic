@@ -29,7 +29,12 @@ class NoOpModel(Model):
             debug
         """
         super(NoOpModel, self).__init__(
-            sess, ob_space, ac_space, replay_buffer, verbose)
+            sess=sess,
+            ob_space=ob_space,
+            ac_space=ac_space,
+            replay_buffer=replay_buffer,
+            verbose=verbose,
+        )
 
         # an empty observation, consisting only of zeros
         self.noop_obs = np.array([0 for _ in range(self.ob_space.shape[0])])

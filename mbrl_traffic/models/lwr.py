@@ -38,12 +38,12 @@ class LWRModel(Model):
         ie. {'constant_both': ((density, speed),(density, speed) )}, constant
         value of both ends loop, loop edge values as a ring extend_both,
         extrapolate last value on both ends
-    optimizer_cls : TODO
-        TODO
+    optimizer_cls : type [ mbrl_traffic.utils.optimizers.base.Optimizer ]
+        the optimizer class to use when training the model parameters
     optimizer_params : dict
-        TODO
+        optimizer-specific parameters
     optimizer : mbrl_traffic.utils.optimizers.base.Optimizer
-        TODO
+        the optimizer object
     rho_crit : float
         critical density defined by the Green-shield Model
     """
@@ -107,13 +107,18 @@ class LWRModel(Model):
             string ie. {'constant_both': ((density, speed),(density, speed) )},
             constant value of both ends loop, loop edge values as a ring
             extend_both, extrapolate last value on both ends
-        optimizer_cls : TODO
-            TODO
+        optimizer_cls : type [ mbrl_traffic.utils.optimizers.base.Optimizer ]
+            the optimizer class to use when training the model parameters
         optimizer_params : dict
-            TODO
+            optimizer-specific parameters
         """
         super(LWRModel, self).__init__(
-            sess, ob_space, ac_space, replay_buffer, verbose)
+            sess=sess,
+            ob_space=ob_space,
+            ac_space=ac_space,
+            replay_buffer=replay_buffer,
+            verbose=verbose,
+        )
 
         self.dx = dx
         self.dt = dt
@@ -128,7 +133,13 @@ class LWRModel(Model):
         self.optimizer_params = optimizer_params
 
         # Create the optimizer object.
-        self.optimizer = None  # FIXME
+        self.optimizer = optimizer_cls(
+            param_low=None,  # FIXME
+            param_high=None,  # FIXME
+            fitness_fn=None,  # FIXME
+            verbose=verbose,
+            **optimizer_params
+        )
 
         # critical density defined by the Green-shield Model
         self.rho_crit = self.rho_max / 2
