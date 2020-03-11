@@ -38,6 +38,12 @@ class LWRModel(Model):
         ie. {'constant_both': ((density, speed),(density, speed) )}, constant
         value of both ends loop, loop edge values as a ring extend_both,
         extrapolate last value on both ends
+    optimizer_cls : TODO
+        TODO
+    optimizer_params : dict
+        TODO
+    optimizer : mbrl_traffic.utils.optimizers.base.Optimizer
+        TODO
     rho_crit : float
         critical density defined by the Green-shield Model
     """
@@ -56,7 +62,9 @@ class LWRModel(Model):
                  v_max_max,
                  stream_model,
                  lam,
-                 boundary_conditions):
+                 boundary_conditions,
+                 optimizer_cls,
+                 optimizer_params):
         """Instantiate the LWR model object.
 
         Parameters
@@ -99,6 +107,10 @@ class LWRModel(Model):
             string ie. {'constant_both': ((density, speed),(density, speed) )},
             constant value of both ends loop, loop edge values as a ring
             extend_both, extrapolate last value on both ends
+        optimizer_cls : TODO
+            TODO
+        optimizer_params : dict
+            TODO
         """
         super(LWRModel, self).__init__(
             sess, ob_space, ac_space, replay_buffer, verbose)
@@ -112,6 +124,11 @@ class LWRModel(Model):
         self.stream_model = stream_model
         self.lam = lam
         self.boundary_conditions = boundary_conditions
+        self.optimizer_cls = optimizer_cls
+        self.optimizer_params = optimizer_params
+
+        # Create the optimizer object.
+        self.optimizer = None  # FIXME
 
         # critical density defined by the Green-shield Model
         self.rho_crit = self.rho_max / 2
@@ -133,10 +150,6 @@ class LWRModel(Model):
 
         # Return the new observation.
         return np.concatenate((rho_tp1, v_tp1))
-
-    def update(self):
-        """See parent class."""
-        pass  # FIXME
 
     def _ibvp(self, rho_t):
         """Implement Godunov scheme for multi-populations.
@@ -179,15 +192,9 @@ class LWRModel(Model):
             )
 
         # Update boundary conditions by extending/extrapolating boundaries
-        # (reduplication).  TODO: is this different from doing nothing?
+        # (reduplication).
         if self.boundary_conditions == "extend_both":
-            boundary_left = rho_tp1[0]
-            boundary_right = rho_tp1[-1]
-            rho_tp1 = np.insert(
-                np.append(rho_tp1[1:-1], boundary_right),
-                0,
-                boundary_left
-            )
+            pass
 
         # Update boundary conditions by keeping boundaries constant.
         if isinstance(self.boundary_conditions, dict):
@@ -250,6 +257,23 @@ class LWRModel(Model):
             equilibrium velocity at every specified point on road
         """
         return self.v_max * ((1 - (rho_t / self.rho_max)) ** self.lam)
+
+    def update(self):
+        """See parent class."""
+        model_params, error = self.optimizer.solve()
+
+        # Save the new model parameters.
+        pass  # TODO
+
+        return error
+
+    def compute_loss(self, states, actions, next_states):
+        """See parent class."""
+        # Compute the predicted next states.
+        expected_next_states = self.get_next_obs(states, actions)
+
+        # Compute the loss.
+        return None  # FIXME
 
     def get_td_map(self):
         """See parent class."""

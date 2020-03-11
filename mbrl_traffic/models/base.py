@@ -83,6 +83,27 @@ class Model(object):
         """
         raise NotImplementedError
 
+    def compute_loss(self, states, actions, next_states):
+        """Compute the loss for a given set of data-points.
+
+        This is used for validation purposes.
+
+        Parameters
+        ----------
+        states : array_like
+            (batch_size, obs_dim) matrix of observations
+        actions : array_like
+            (batch_size, ac_dim) matrix of actions
+        next_states : array_like
+            (batch_size, obs_dim) matrix of actual next step observations
+
+        Returns
+        -------
+        float
+            the output from the loss function
+        """
+        raise NotImplementedError
+
     def get_td_map(self):
         """Return dict map for the summary (to be run in the algorithm)."""
         raise NotImplementedError

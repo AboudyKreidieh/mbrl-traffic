@@ -1,4 +1,6 @@
 """TODO."""
+import tensorflow as tf
+
 from mbrl_traffic.models import LWRModel
 from mbrl_traffic.models import ARZModel
 from mbrl_traffic.models import NoOpModel
@@ -12,9 +14,9 @@ from mbrl_traffic.models import FeedForwardModel
 LWR_MODEL_PARAMS = dict(
     # length of individual sections on the highway. Speeds and densities are
     # computed on these sections. Must be a factor of the length
-    dx=None,  # FIXME
+    dx=50,
     # time discretization (in seconds/step)
-    dt=None,  # FIXME
+    dt=0.5,
     # maximum density term in the model (in veh/m)
     rho_max=None,  # FIXME
     # maximum possible density of the network (in veh/m)
@@ -35,6 +37,8 @@ LWR_MODEL_PARAMS = dict(
     # both ends loop, loop edge values as a ring extend_both, extrapolate last
     # value on both ends
     boundary_conditions=None,  # FIXME
+    # the optimizer class to use when training the model parameters
+    optimizer_cls="GeneticAlgorithm",
 )
 
 
@@ -45,9 +49,9 @@ LWR_MODEL_PARAMS = dict(
 ARZ_MODEL_PARAMS = dict(
     # length of individual sections on the highway. Speeds and densities are
     # computed on these sections. Must be a factor of the length
-    dx=None,  # FIXME
+    dx=50,
     # time discretization (in seconds/step)
-    dt=None,  # FIXME
+    dt=0.5,
     # maximum density term in the model (in veh/m)
     rho_max=None,  # FIXME
     # maximum possible density of the network (in veh/m)
@@ -68,6 +72,8 @@ ARZ_MODEL_PARAMS = dict(
     # both ends loop, loop edge values as a ring extend_both, extrapolate last
     # value on both ends
     boundary_conditions=None,  # FIXME
+    # the optimizer class to use when training the model parameters
+    optimizer_cls="GeneticAlgorithm",
 )
 
 
@@ -77,17 +83,17 @@ ARZ_MODEL_PARAMS = dict(
 
 FEEDFORWARD_MODEL_PARAMS = dict(
     # the model learning rate
-    model_lr=None,  # FIXME
+    model_lr=1e-5,
     # whether to enable layer normalization
-    layer_norm=None,  # FIXME
+    layer_norm=False,
     # the size of the neural network for the model
-    layers=None,  # FIXME
+    layers=[128, 128, 128],
     # the activation function to use in the neural network
-    act_fun=None,  # FIXME
+    act_fun=tf.nn.relu,
     # whether the output from the model is stochastic or deterministic
-    stochastic=None,  # FIXME
+    stochastic=True,
     # number of ensemble models
-    num_ensembles=None,  # FIXME
+    num_ensembles=1,
 )
 
 
@@ -178,9 +184,9 @@ def parse_model_params(parser):
 
     # parameters for LWRModel, ARZModel, and NonLocalModel
     parser.add_argument(
-        '--optimizer',
-        type=str, default=LWR_MODEL_PARAMS["optimizer"],
-        help='TODO')
+        '--optimizer_cls',
+        type=str, default=LWR_MODEL_PARAMS["optimizer_cls"],
+        help='the optimizer class to use when training the model parameters')
 
     # parameters for LWRModel and ARZModel
     parser.add_argument(
@@ -340,15 +346,8 @@ def get_model_params_from_args(args):
     ValueError
         if an unknown model type is specified
     """
-    if args.model in ["LWRModel", "ARZModel", "NonLocalModel"]:
-        # Create the optimizer object.
-        optimizer = None
-    else:
-        optimizer = None
-
     if args.model == "LWRModel":
         model_cls = LWRModel
-
         model_params = {
             "dx": args.dx,
             "dt": args.dt,
@@ -359,12 +358,11 @@ def get_model_params_from_args(args):
             "stream_model": args.stream_model,
             "lam": args.lam,
             "boundary_conditions": args.boundary_conditions,
-            "optimizer": optimizer,
+            "optimizer_cls": args.optimizer_cls,
         }
 
     elif args.model == "ARZModel":
         model_cls = ARZModel
-
         model_params = {
             "dx": args.dx,
             "dt": args.dt,
@@ -375,12 +373,11 @@ def get_model_params_from_args(args):
             "tau": args.tau,
             "lam": args.lam,
             "boundary_conditions": args.boundary_conditions,
-            "optimizer": optimizer,
+            "optimizer_cls": args.optimizer_cls,
         }
 
     elif args.model == "NonLocalModel":
         model_cls = None  # FIXME
-
         model_params = {
 
         }  # FIXME
@@ -391,7 +388,6 @@ def get_model_params_from_args(args):
 
     elif args.model == "FeedForwardModel":
         model_cls = FeedForwardModel
-
         model_params = {
             "model_lr": args.model_lr,
             "layer_norm": args.layer_norm,

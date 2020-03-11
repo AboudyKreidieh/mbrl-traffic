@@ -33,11 +33,17 @@ class ARZModel(Model):
         to the equilibrium speed (in sec)
     lam : float
         exponent of the Green-shield velocity function
-    boundary_conditions : str
+    boundary_conditions : str or dict
         conditions at road left and right ends; should either dict or string
         ie. {'constant_both': ((density, speed),(density, speed) )}, constant
         value of both ends loop, loop edge values as a ring extend_both,
         extrapolate last value on both ends
+    optimizer_cls : TODO
+        TODO
+    optimizer_params : dict
+        TODO
+    optimizer : mbrl_traffic.utils.optimizers.base.Optimizer
+        TODO
     rho_crit : float
         critical density defined by the Green-shield Model
     """
@@ -56,7 +62,9 @@ class ARZModel(Model):
                  v_max_max,
                  tau,
                  lam,
-                 boundary_conditions):
+                 boundary_conditions,
+                 optimizer_cls,
+                 optimizer_params):
         """Instantiate the ARZ model object.
 
         Parameters
@@ -98,6 +106,10 @@ class ARZModel(Model):
             string ie. {'constant_both': ((density, speed),(density, speed) )},
             constant value of both ends loop, loop edge values as a ring
             extend_both, extrapolate last value on both ends
+        optimizer_cls : type [ mbrl_traffic.utils.optimizers.base.Optimizer ]
+            the optimizer class to use when training the model parameters
+        optimizer_params : dict
+            TODO
         """
         super(ARZModel, self).__init__(
             sess, ob_space, ac_space, replay_buffer, verbose)
@@ -108,10 +120,14 @@ class ARZModel(Model):
         self.rho_max_max = rho_max_max
         self.v_max = v_max
         self.v_max_max = v_max_max
-        self.cfl = None  # FIXME
         self.tau = tau
         self.lam = lam
         self.boundary_conditions = boundary_conditions
+        self.optimizer_cls = optimizer_cls
+        self.optimizer_params = optimizer_params
+
+        # Create the optimizer object.
+        self.optimizer = None  # FIXME
 
         # critical density defined by the Green-shield Model
         self.rho_crit = self.rho_max / 2
@@ -403,7 +419,20 @@ class ARZModel(Model):
 
     def update(self):
         """See parent class."""
-        pass  # FIXME
+        model_params, error = self.optimizer.solve()
+
+        # Save the new model parameters.
+        pass  # TODO
+
+        return error
+
+    def compute_loss(self, states, actions, next_states):
+        """See parent class."""
+        # Compute the predicted next states.
+        expected_next_states = self.get_next_obs(states, actions)
+
+        # Compute the loss.
+        return None  # FIXME
 
     def get_td_map(self):
         """See parent class."""

@@ -1,3 +1,5 @@
 numpy==1.16.0
 tensorflow==1.15.0
 matplotlib==3.0.0
+gym==0.10.8
+pandas==0.24.2

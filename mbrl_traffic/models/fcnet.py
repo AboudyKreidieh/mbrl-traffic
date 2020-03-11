@@ -98,7 +98,7 @@ class FeedForwardModel(Model):
         self.num_ensembles = num_ensembles
 
         if self.verbose >= 2:
-            print('setting up the dynamics model')
+            print('Setting up the dynamics model')
 
         self.model = []
         self.model_loss = []
@@ -294,6 +294,14 @@ class FeedForwardModel(Model):
 
         # Return the mean model loss.
         return np.mean(vals[:round(len(vals)/2)])
+
+    def compute_loss(self, states, actions, next_states):
+        """See parent class."""
+        # Compute the predicted next states.
+        expected_next_states = self.get_next_obs(states, actions)
+
+        # Compute the loss.
+        return None  # FIXME
 
     def get_td_map(self):
         """See parent class."""

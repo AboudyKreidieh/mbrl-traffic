@@ -3,15 +3,34 @@
 Usage
     python train_model.py "ring-1-lane" --subset "65,70,75"
 """
+import os
 import argparse
 import sys
 import tensorflow as tf
 import random
+import numpy as np
+import pandas as pd
+from gym.spaces import Box
+import time
 
 from mbrl_traffic.utils.replay_buffer import ReplayBuffer
 from mbrl_traffic.utils.train import parse_model_params
 from mbrl_traffic.utils.train import get_model_params_from_args
 from mbrl_traffic.utils.tf_util import make_session
+
+
+VALID_NETWORK_TYPES = [
+    "ring-1-lane",
+    "ring-2-lanes",
+    "ring-3-lanes",
+    "ring-4-lanes",
+    "merge-1-lane",
+]
+
+VALID_SIMULATION_TYPES = [
+    "sumo-idm",
+    "sumo-free",
+]
 
 
 def parse_args(args):
@@ -112,7 +131,56 @@ def import_dataset(network_type, simulation_type, subset, warmup):
         if the dataset has not been installed. Follow the instructions provided
         alongside this error to install the datasets.
     """
-    pass
+    directory = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "results/{}/baselines/{}".format(network_type, simulation_type))
+
+    # Check that the network and simulation types are valid.
+    assert network_type in VALID_NETWORK_TYPES, \
+        "Network type '{}' is not known.".format(network_type)
+    assert simulation_type in VALID_SIMULATION_TYPES, \
+        "Simulation type '{}' is not known.".format(simulation_type)
+
+    # Check that the dataset is available.
+    assert os.path.isdir(directory), \
+        "Cannot find the simulation data. Please download by running: wget " \
+        "https://s3.us-east-2.amazonaws.com/aboudy.experiments/macro/{}/" \
+        "baseline/{}.tar.xz".format(network_type, simulation_type)  # FIXME
+
+    # Collect the names of all dataset files.
+    postfix = os.listdir(directory) if subset == "" else subset.split(",")
+    files = []
+    for p in postfix:
+        try:
+            files.extend([
+                os.path.join(directory, "{}/macro/{}".format(p, file)) for file
+                in os.listdir(os.path.join(directory, "{}/macro".format(p)))
+                if file.endswith(".csv")
+            ])
+        except NotADirectoryError:  # an image file for example
+            pass
+
+    data = []
+    for fp in files:
+        # Import the next dataset.
+        df = pd.read_csv(fp)
+
+        # Separate into states / actions / next_states.
+        columns = list(df.columns)
+        n_sections = sum(c.startswith("speed") for c in columns)
+        v = np.array(df[["speed_{}".format(i) for i in range(n_sections)]])
+        d = np.array(df[["density_{}".format(i) for i in range(n_sections)]])
+        states = np.concatenate((v, d), axis=1)  # FIXME?
+
+        # Add to the complete dataset (assuming no action for now).
+        for i in range(states.shape[0] - warmup - 1):
+            data.append((
+                states[warmup + i, :],  # states
+                states[warmup + i + 1, :],  # next states
+                np.array([])  # actions
+            ))
+
+    return data
 
 
 def create_replay_buffer(args):
@@ -131,6 +199,9 @@ def create_replay_buffer(args):
     list of (array_like, array_like, array_like)
         the testing dataset
     """
+    t0 = time.time()
+    print("Importing data...")
+
     # Import the dataset.
     dataset = import_dataset(
         network_type=args.network_type,
@@ -139,6 +210,7 @@ def create_replay_buffer(args):
         warmup=args.warmup,
     )
     train_size = round(args.training_set * len(dataset))
+    test_size = len(dataset) - train_size
 
     # Shuffle the dataset.
     random.shuffle(dataset)
@@ -147,14 +219,13 @@ def create_replay_buffer(args):
     replay_buffer = ReplayBuffer(
         buffer_size=train_size,
         batch_size=args.batch_size,
-        obs_dim=dataset[0][0].shape,
-        ac_dim=dataset[0][1].shape,
+        obs_dim=dataset[0][0].shape[0],
+        ac_dim=dataset[0][2].shape[0],
     )
 
-    # Store a portion of the data in the replay buffer. Leave the rest for
-    # testing.
+    # Store a portion of the data in the replay buffer.
     for i in range(train_size):
-        state, action, next_state = dataset[i]
+        state, next_state, action = dataset[i]
         replay_buffer.add(
             obs_t=state,
             action=action,
@@ -162,7 +233,27 @@ def create_replay_buffer(args):
             obs_tp1=next_state,
             done=False,
         )
-    testing_set = dataset[-train_size:]
+
+    # Leave the rest of the data for testing.
+    testing_set = {
+        "states": np.array([
+            dataset[train_size + i][0] for i in range(test_size)
+        ]),
+        "actions": np.array([
+            dataset[train_size + i][1] for i in range(test_size)
+        ]),
+        "next_states": np.array([
+            dataset[train_size + i][2] for i in range(test_size)
+        ]),
+    }
+
+    # some verbosity
+    print(" Time taken:         %.1f" % (time.time() - t0))
+    print(" Replay buffer size: {}".format(len(replay_buffer)))
+    print(" Training set size:  {}".format(testing_set["states"].shape[0]))
+    print(" Observation shape:  {}".format(replay_buffer.obs_dim))
+    print(" Action shape:       {}".format(replay_buffer.ac_dim))
+    print("")
 
     return replay_buffer, testing_set
 
@@ -191,11 +282,23 @@ def create_model(args, sess, replay_buffer):
         if an unknown model type is specified
     """
     # Some shared variables by all models.
-    ob_space = None  # FIXME
-    ac_space = None  # FIXME
+    ob_space = Box(
+        low=-float("inf"),
+        high=float("inf"),
+        shape=(replay_buffer.obs_dim,),
+        dtype=np.float32
+    )
+    ac_space = Box(
+        low=-float("inf"),
+        high=float("inf"),
+        shape=(replay_buffer.ac_dim,),
+        dtype=np.float32
+    )
 
+    # Collect the model class and it's parameters.
     model_cls, model_params = get_model_params_from_args(args)
 
+    # Create the model.
     model = model_cls(
         sess=sess,
         ob_space=ob_space,
@@ -208,9 +311,36 @@ def create_model(args, sess, replay_buffer):
     return model
 
 
+def log_results(model, interval, train_loss, test_loss):
+    """TODO.
+
+    TODO
+
+    Parameters
+    ----------
+    model : TODO
+        TODO
+    interval : TODO
+        TODO
+    train_loss : TODO
+        TODO
+    test_loss : TODO
+        TODO
+    """
+    # Generic data
+    log_data = {
+        "interval": interval,
+        "train/loss": train_loss,
+        "test/loss": test_loss,
+    }
+
+    # Data from the td map.
+    td_map = model.get_td_map()
+
+
 def main(args):
     """Perform the complete model training operation."""
-    # Create a tenfsorflow session.
+    # Create a tensorflow session.
     graph = tf.Graph()
     with graph.as_default():
         sess = make_session(num_cpu=3, graph=graph)
@@ -221,19 +351,24 @@ def main(args):
     # Create the model.
     model = create_model(args, sess, replay_buffer)
 
-    with sess.as_default(), graph.as_default():
-        # Perform any model initialization that may be necessary.
-        model.initialize()
-
-        for i in range(args.steps):
-            # Perform the training procedure.
-            pass
-
-            # Evaluate the performance of the model on the training set.
-            pass
-
-            # Log the results and store the model parameters.
-            pass
+    # with sess.as_default(), graph.as_default():
+    #     # Perform any model initialization that may be necessary.
+    #     model.initialize()
+    #
+    #     for i in range(args.steps):
+    #         # Perform the training procedure.
+    #         train_loss = model.update()
+    #
+    #         # Evaluate the performance of the model on the training set.
+    #         test_loss = model.compute_loss(
+    #             states=testing_set["states"],
+    #             actions=testing_set["actions"],
+    #             next_states=testing_set["next_states"],
+    #         )
+    #
+    #         # Log the results and store the model parameters.
+    #         if i % args.log_interval == 0:
+    #             log_results(model, i, train_loss, test_loss)
 
     return 0
 
