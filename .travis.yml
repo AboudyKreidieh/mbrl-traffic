@@ -39,6 +39,7 @@ before_script:
   - pydocstyle . --convention=numpy
 
 script:
+  - source activate flow
   - pip install -e .
   - nose2 --with-coverage
 
