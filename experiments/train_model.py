@@ -312,7 +312,7 @@ def create_model(args, sess, replay_buffer):
 
 
 def log_results(model, interval, train_loss, test_loss):
-    """TODO.
+    """Record training and testing results.
 
     TODO
 
@@ -351,6 +351,7 @@ def main(args):
     # Create the model.
     model = create_model(args, sess, replay_buffer)
 
+    # TODO
     # with sess.as_default(), graph.as_default():
     #     # Perform any model initialization that may be necessary.
     #     model.initialize()

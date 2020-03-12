@@ -13,6 +13,9 @@ from mbrl_traffic.models import FeedForwardModel
 from mbrl_traffic.utils.optimizers import NelderMead
 from mbrl_traffic.utils.optimizers import GeneticAlgorithm
 from mbrl_traffic.utils.optimizers import CrossEntropyMethod
+from mbrl_traffic.envs.params.ring import flow_params as ring_params
+from mbrl_traffic.envs.params.merge import flow_params as merge_params
+from mbrl_traffic.envs.params.highway import flow_params as highway_params
 
 
 # =========================================================================== #
@@ -464,21 +467,31 @@ def create_env(env, render=False, evaluate=False):
     """
     # Mixed-autonomy traffic environments
     if env.startswith("av"):
-        if env == "ring":
-            env = None  # TODO
-        elif env == "merge":
-            env = None  # TODO
-        elif env == "highway":
-            env = None  # TODO
+        if env.endswith("ring"):
+            flow_params = ring_params.copy()
+        elif env.endswith("merge"):
+            flow_params = merge_params.copy()
+        elif env.endswith("highway"):
+            flow_params = highway_params.copy()
+        else:
+            raise ValueError("Unknown environment type: {}".format(env))
+
+        flow_params["env"] = None  # FIXME
+        env = None  # FIXME
 
     # Variable speed limit environments
     elif env.startswith("vsl"):
-        if env == "ring":
-            env = None  # TODO
-        elif env == "merge":
-            env = None  # TODO
-        elif env == "highway":
-            env = None  # TODO
+        if env.endswith("ring"):
+            flow_params = ring_params.copy()
+        elif env.endswith("merge"):
+            flow_params = merge_params.copy()
+        elif env.endswith("highway"):
+            flow_params = highway_params.copy()
+        else:
+            raise ValueError("Unknown environment type: {}".format(env))
+
+        flow_params["env"] = None  # FIXME
+        env = None  # FIXME
 
     # MuJoCo and other gym environments
     elif isinstance(env, str):
