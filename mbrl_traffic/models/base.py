@@ -107,3 +107,23 @@ class Model(object):
     def get_td_map(self):
         """Return dict map for the summary (to be run in the algorithm)."""
         raise NotImplementedError
+
+    def save(self, save_path):
+        """Save the parameters of a model.
+
+        Parameters
+        ----------
+        save_path : str
+            Prefix of filenames created for the checkpoint
+        """
+        raise NotImplementedError
+
+    def load(self, load_path):
+        """Load model parameters of a model.
+
+        Parameters
+        ----------
+        load_path : str
+            location of the checkpoint
+        """
+        raise NotImplementedError

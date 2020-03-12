@@ -104,3 +104,11 @@ class KShootPolicy(Policy):
     def get_td_map(self):
         """Return dict map for the summary (to be run in the algorithm)."""
         raise NotImplementedError
+
+    def save(self, save_path):
+        """See parent class."""
+        raise NotImplementedError
+
+    def load(self, load_path):
+        """See parent class."""
+        raise NotImplementedError

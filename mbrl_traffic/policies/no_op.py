@@ -56,3 +56,11 @@ class NoOpPolicy(Policy):
     def get_td_map(self):
         """Return an empty dictionary."""
         return {}
+
+    def save(self, save_path):
+        """Do nothing."""
+        pass
+
+    def load(self, load_path):
+        """Do nothing."""
+        pass
