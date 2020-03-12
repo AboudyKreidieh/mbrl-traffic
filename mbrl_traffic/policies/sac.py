@@ -679,3 +679,11 @@ class SACPolicy(Policy):
         }
 
         return td_map
+
+    def save(self, save_path):
+        """See parent class."""
+        raise NotImplementedError
+
+    def load(self, load_path):
+        """See parent class."""
+        raise NotImplementedError

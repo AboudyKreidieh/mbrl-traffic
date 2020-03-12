@@ -289,3 +289,11 @@ class LWRModel(Model):
     def get_td_map(self):
         """See parent class."""
         return {}
+
+    def save(self, save_path):
+        """See parent class."""
+        raise NotImplementedError
+
+    def load(self, load_path):
+        """See parent class."""
+        raise NotImplementedError
