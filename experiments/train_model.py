@@ -6,7 +6,7 @@ Usage
 import os
 import argparse
 import sys
-import tensorflow as tf
+# import tensorflow as tf
 import random
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ import time
 from mbrl_traffic.utils.replay_buffer import ReplayBuffer
 from mbrl_traffic.utils.train import parse_model_params
 from mbrl_traffic.utils.train import get_model_params_from_args
-from mbrl_traffic.utils.tf_util import make_session
+# from mbrl_traffic.utils.tf_util import make_session
 
 
 VALID_NETWORK_TYPES = [
@@ -314,8 +314,6 @@ def create_model(args, sess, replay_buffer):
 def log_results(model, interval, train_loss, test_loss):
     """Record training and testing results.
 
-    TODO
-
     Parameters
     ----------
     model : TODO
@@ -327,29 +325,29 @@ def log_results(model, interval, train_loss, test_loss):
     test_loss : TODO
         TODO
     """
-    # Generic data
-    log_data = {
-        "interval": interval,
-        "train/loss": train_loss,
-        "test/loss": test_loss,
-    }
-
-    # Data from the td map.
-    td_map = model.get_td_map()
+    # # Generic data
+    # log_data = {
+    #     "interval": interval,
+    #     "train/loss": train_loss,
+    #     "test/loss": test_loss,
+    # }
+    #
+    # # Data from the td map.
+    # td_map = model.get_td_map()
 
 
 def main(args):
     """Perform the complete model training operation."""
-    # Create a tensorflow session.
-    graph = tf.Graph()
-    with graph.as_default():
-        sess = make_session(num_cpu=3, graph=graph)
-
-    # Create the replay buffer and the testing set.
-    replay_buffer, testing_set = create_replay_buffer(args)
-
-    # Create the model.
-    model = create_model(args, sess, replay_buffer)
+    # # Create a tensorflow session.
+    # graph = tf.Graph()
+    # with graph.as_default():
+    #     sess = make_session(num_cpu=3, graph=graph)
+    #
+    # # Create the replay buffer and the testing set.
+    # replay_buffer, testing_set = create_replay_buffer(args)
+    #
+    # # Create the model.
+    # model = create_model(args, sess, replay_buffer)
 
     # TODO
     # with sess.as_default(), graph.as_default():
