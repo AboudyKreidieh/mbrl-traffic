@@ -53,20 +53,6 @@ class TestNoOpPolicy(unittest.TestCase):
         pass  # TODO
 
 
-class TestPPOPolicy(unittest.TestCase):
-    """Tests the PPOPolicy object."""
-
-    def setUp(self):
-        pass  # TODO
-
-    def tearDown(self):
-        pass  # TODO
-
-    def test_pass(self):
-        """TODO."""
-        pass  # TODO
-
-
 class TestSACPolicy(unittest.TestCase):
     """Tests the SACPolicy object."""
 

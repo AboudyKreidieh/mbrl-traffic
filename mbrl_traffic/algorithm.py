@@ -153,6 +153,9 @@ class ModelBasedRLAlgorithm(object):
             the environment to evaluate from (if registered in Gym, can be str)
         nb_eval_episodes : int
             the number of evaluation episodes
+        policy_update_freq : int
+            number of training steps per policy update step. This is separate
+            from training the model.
         model_update_freq : int
             number of training steps per model update step. This is separate
             from training the policy.
