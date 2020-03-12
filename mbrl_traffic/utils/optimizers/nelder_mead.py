@@ -2,7 +2,7 @@
 from mbrl_traffic.utils.optimizers.base import Optimizer
 
 
-class NelderMead(Optimizer):
+class NelderMead(Optimizer):  # TODO
     """Nelder Mead optimizer object."""
 
     def __init__(self,

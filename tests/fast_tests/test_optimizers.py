@@ -21,7 +21,7 @@ class TestOptimizer(unittest.TestCase):
         self.assertEqual(optimizer.verbose, 4)
 
 
-class TestNelderMead(unittest.TestCase):
+class TestNelderMead(unittest.TestCase):  # TODO
     """Tests the NelderMead object."""
 
     def setUp(self):
