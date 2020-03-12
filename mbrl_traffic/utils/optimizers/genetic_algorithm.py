@@ -5,7 +5,7 @@ import heapq
 from mbrl_traffic.utils.optimizers.base import Optimizer
 
 
-class GeneticAlgorithm(Optimizer):
+class GeneticAlgorithm(Optimizer):  # TODO
     """Genetic algorithm optimizer object.
 
     This algorithm is heavily adopted from the following link:

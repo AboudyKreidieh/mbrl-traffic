@@ -35,7 +35,7 @@ class TestNelderMead(unittest.TestCase):
         pass  # TODO
 
 
-class TestGeneticAlgorithm(unittest.TestCase):
+class TestGeneticAlgorithm(unittest.TestCase):  # TODO
     """Tests the GeneticAlgorithm object."""
 
     def setUp(self):
@@ -44,7 +44,27 @@ class TestGeneticAlgorithm(unittest.TestCase):
     def tearDown(self):
         pass  # TODO
 
-    def test_pass(self):
+    def test_selection(self):
+        """TODO."""
+        pass  # TODO
+
+    def test_pairing(self):
+        """TODO."""
+        pass  # TODO
+
+    def test_mating(self):
+        """TODO."""
+        pass  # TODO
+
+    def test_mutation(self):
+        """TODO."""
+        pass  # TODO
+
+    def test_case1(self):
+        """TODO."""
+        pass  # TODO
+
+    def test_case2(self):
         """TODO."""
         pass  # TODO
 
