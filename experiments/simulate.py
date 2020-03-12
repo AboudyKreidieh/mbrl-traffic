@@ -10,8 +10,9 @@ from flow.core.experiment import Experiment
 from flow.core.params import AimsunParams
 
 from mbrl_traffic.envs.params.ring import flow_params as ring_params
+from mbrl_traffic.envs.params.merge import flow_params as merge_params
 from mbrl_traffic.envs.params.highway import flow_params as highway_params
-from mbrl_traffic.envs.params.ring import RING_LENGTH
+from mbrl_traffic.envs.params.ring import RING_LENGTH, NUM_LANES
 
 
 def parse_args(args):
@@ -55,7 +56,10 @@ def parse_args(args):
     # new to this repository
     parser.add_argument(
         '--ring_length', type=float, default=RING_LENGTH,
-        help='length of the ring if using the ring network.')
+        help='length of the ring if using the ring network')
+    parser.add_argument(
+        '--ring_lanes', type=float, default=NUM_LANES,
+        help='the number of lanes if using the the ring network')
 
     return parser.parse_known_args(args)[0]
 
@@ -68,6 +72,9 @@ if __name__ == "__main__":
     if env_name == "ring":
         flow_params = ring_params.copy()
         flow_params['net'].additional_params['length'] = flags.ring_length
+        flow_params['net'].additional_params['lanes'] = flags.ring_lanes
+    elif env_name == "merge":
+        flow_params = merge_params.copy()
     elif env_name == "highway":
         flow_params = highway_params.copy()
     else:

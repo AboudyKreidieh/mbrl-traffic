@@ -25,6 +25,8 @@ class ReplayBuffer(object):
         self._current_idx = 0
         self._next_idx = 0
         self._batch_size = batch_size
+        self.obs_dim = obs_dim
+        self.ac_dim = ac_dim
 
         self.obs_t = np.zeros((buffer_size, obs_dim), dtype=np.float32)
         self.action_t = np.zeros((buffer_size, ac_dim), dtype=np.float32)

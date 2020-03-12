@@ -1,9 +1,9 @@
-"""Script containing the base policy object."""
+"""Script containing the k-shoot policy object."""
 from mbrl_traffic.policies.base import Policy
 
 
 class KShootPolicy(Policy):
-    """TODO
+    """K-shoot policy object.
 
     Attributes
     ----------

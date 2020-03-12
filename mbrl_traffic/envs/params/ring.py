@@ -1,28 +1,31 @@
 """Flow-specific parameters for the multi-lane ring scenario."""
-
 from flow.controllers import IDMController, ContinuousRouter
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
 from flow.core.params import VehicleParams
 from flow.core.params import SumoCarFollowingParams
+from flow.core.params import SumoLaneChangeParams
 from flow.envs.ring.accel import AccelEnv, ADDITIONAL_ENV_PARAMS
 from flow.networks.ring import RingNetwork, ADDITIONAL_NET_PARAMS
 
 # Number of vehicles in the network
-NUM_VEHICLES = 200
+NUM_VEHICLES = 75
 # Length of the ring (in meters)
-RING_LENGTH = 1000
+RING_LENGTH = 1500
 # Number of lanes in the ring
-NUM_LANES = 4
+NUM_LANES = 1
 
 vehicles = VehicleParams()
 vehicles.add(
     veh_id="idm",
-    # acceleration_controller=(IDMController, {
-    #     "noise": 0.2,
-    # }),
+    acceleration_controller=(IDMController, {
+        "noise": 0.2,
+    }),
     routing_controller=(ContinuousRouter, {}),
     car_following_params=SumoCarFollowingParams(
         min_gap=0,
+    ),
+    lane_change_params=SumoLaneChangeParams(
+        lane_change_mode="strategic",
     ),
     num_vehicles=NUM_VEHICLES)
 
@@ -47,13 +50,12 @@ flow_params = dict(
     # sumo-related parameters (see flow.core.params.SumoParams)
     sim=SumoParams(
         render=True,
-        sim_step=0.1,
+        sim_step=0.5,
     ),
 
     # environment related parameters (see flow.core.params.EnvParams)
     env=EnvParams(
-        sims_per_step=10,
-        horizon=3600,
+        horizon=7200,
         additional_params=ADDITIONAL_ENV_PARAMS,
     ),
 

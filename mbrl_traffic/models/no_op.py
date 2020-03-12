@@ -29,9 +29,14 @@ class NoOpModel(Model):
             debug
         """
         super(NoOpModel, self).__init__(
-            sess, ob_space, ac_space, replay_buffer, verbose)
+            sess=sess,
+            ob_space=ob_space,
+            ac_space=ac_space,
+            replay_buffer=replay_buffer,
+            verbose=verbose,
+        )
 
-        # an empty observation, consisting only of zeros.
+        # an empty observation, consisting only of zeros
         self.noop_obs = np.array([0 for _ in range(self.ob_space.shape[0])])
 
     def initialize(self):
@@ -44,6 +49,10 @@ class NoOpModel(Model):
 
     def update(self):
         """Do nothing."""
+        return 0
+
+    def compute_loss(self, states, actions, next_states):
+        """Return a default value."""
         return 0
 
     def get_td_map(self):

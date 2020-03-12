@@ -8,127 +8,20 @@ from copy import deepcopy
 import numpy as np
 import tensorflow as tf
 
-from mbrl_traffic.models.arz import ARZModel
-from mbrl_traffic.models.fcnet import FeedForwardModel
-from mbrl_traffic.models.lwr import LWRModel
-from mbrl_traffic.models.no_op import NoOpModel
-from mbrl_traffic.policies.sac import SoftActorCriticPolicy
-from mbrl_traffic.policies.kshoot import KShootPolicy
+from mbrl_traffic.models import ARZModel
+from mbrl_traffic.models import FeedForwardModel
+from mbrl_traffic.models import LWRModel
+from mbrl_traffic.models import NoOpModel
+from mbrl_traffic.policies import SACPolicy
+from mbrl_traffic.policies import KShootPolicy
 from mbrl_traffic.utils.tf_util import make_session
 from mbrl_traffic.utils.misc import ensure_dir, create_env
 from mbrl_traffic.utils.replay_buffer import ReplayBuffer
-
-
-# =========================================================================== #
-#                        Model parameters for LWRModel                        #
-# =========================================================================== #
-
-LWR_MODEL_PARAMS = dict(
-    # TODO
-    # whether the model parameters are fixed or trainable
-    trainable=True,
-    # the model learning rate
-    model_lr=3e-4,
-    # whether the model parameters should be state dependent. In this case, a
-    # function approximator is learned to map states to model parameters.
-    state_dependent=False,
-    # the size of the neural network for the model, used to compute the output
-    # of the model parameters for the current step. Used if state_dependent is
-    # set to True.
-    layers=[256, 256],
-    # whether the output from the model is stochastic or deterministic
-    stochastic=False,
-    # number of ensemble models
-    num_ensembles=1,
-    # number of particles used to generate the forward estimate of the model.
-    num_particles=1,
-)
-
-
-# =========================================================================== #
-#                        Model parameters for ARZModel                        #
-# =========================================================================== #
-
-ARZ_MODEL_PARAMS = dict(
-    # TODO
-    # whether the model parameters are fixed or trainable
-    trainable=True,
-    # the model learning rate
-    model_lr=3e-4,
-    # whether the model parameters should be state dependent. In this case, a
-    # function approximator is learned to map states to model parameters.
-    state_dependent=False,
-    # the size of the neural network for the model, used to compute the output
-    # of the model parameters for the current step. Used if state_dependent is
-    # set to True.
-    layers=[256, 256],
-    # whether the output from the model is stochastic or deterministic
-    stochastic=False,
-    # number of ensemble models
-    num_ensembles=1,
-    # number of particles used to generate the forward estimate of the model.
-    num_particles=1,
-)
-
-
-# =========================================================================== #
-#                    Model parameters for FeedForwardModel                    #
-# =========================================================================== #
-
-FEEDFORWARD_MODEL_PARAMS = dict(
-    # the model learning rate
-    model_lr=3e-4,
-    # enable layer normalisation
-    layer_norm=False,
-    # the size of the neural network for the model
-    layers=[256, 256],
-    # the activation function to use in the neural network
-    act_fun=tf.nn.relu,
-    # whether the output from the model is stochastic or deterministic
-    stochastic=False,
-    # number of ensemble models
-    num_ensembles=1,
-    # number of particles used to generate the forward estimate of the model.
-    num_particles=1,
-)
-
-
-# =========================================================================== #
-#                     Policy parameters for KShootPolicy                      #
-# =========================================================================== #
-
-KSHOOT_POLICY_PARAMS = dict(
-    # trajectory length to compute the sum of returns over
-    traj_length=10,
-)
-
-
-# =========================================================================== #
-#                   Policy parameters for FeedForwardPolicy                   #
-# =========================================================================== #
-
-FEEDFORWARD_POLICY_PARAMS = dict(
-    # the actor learning rate
-    actor_lr=3e-4,
-    # the critic learning rate
-    critic_lr=3e-4,
-    # the soft update coefficient (keep old values, between 0 and 1)
-    tau=0.005,
-    # the discount rate
-    gamma=0.99,
-    # the size of the neural network for the policy
-    layers=[256, 256],
-    # enable layer normalisation
-    layer_norm=False,
-    # the activation function to use in the neural network
-    act_fun=tf.nn.relu,
-    # specifies whether to use the huber distance function as the loss for the
-    # critic. If set to False, the mean-squared error metric is used instead
-    use_huber=False,
-    # target entropy used when learning the entropy coefficient. If set to
-    # None, a heuristic value is used.
-    target_entropy=None,
-)
+from mbrl_traffic.utils.train import LWR_MODEL_PARAMS
+from mbrl_traffic.utils.train import ARZ_MODEL_PARAMS
+from mbrl_traffic.utils.train import FEEDFORWARD_MODEL_PARAMS
+from mbrl_traffic.utils.train import KSHOOT_POLICY_PARAMS
+from mbrl_traffic.utils.train import SAC_POLICY_PARAMS
 
 
 class ModelBasedRLAlgorithm(object):
@@ -260,6 +153,9 @@ class ModelBasedRLAlgorithm(object):
             the environment to evaluate from (if registered in Gym, can be str)
         nb_eval_episodes : int
             the number of evaluation episodes
+        policy_update_freq : int
+            number of training steps per policy update step. This is separate
+            from training the model.
         model_update_freq : int
             number of training steps per model update step. This is separate
             from training the policy.
@@ -313,8 +209,8 @@ class ModelBasedRLAlgorithm(object):
         # add the default policy kwargs to the policy_kwargs term
         if policy == KShootPolicy:
             self.policy_kwargs.update(KSHOOT_POLICY_PARAMS.copy())
-        elif policy == SoftActorCriticPolicy:
-            self.policy_kwargs.update(FEEDFORWARD_POLICY_PARAMS.copy())
+        elif policy == SACPolicy:
+            self.policy_kwargs.update(SAC_POLICY_PARAMS.copy())
 
         # add the default model kwargs to the model_kwargs term
         if model == ARZModel:
@@ -886,7 +782,7 @@ class ModelBasedRLAlgorithm(object):
             })
 
         # Append SAC-specific statistics, if needed.
-        if self.policy == SoftActorCriticPolicy:
+        if self.policy == SACPolicy:
             combined_stats.update({
                 # Rollout statistics.
                 'rollout/alpha_mean': np.mean(self.epoch_alphas),
