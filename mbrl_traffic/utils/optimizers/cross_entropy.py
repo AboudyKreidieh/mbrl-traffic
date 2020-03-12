@@ -2,7 +2,7 @@
 from mbrl_traffic.utils.optimizers.base import Optimizer
 
 
-class CrossEntropyMethod(Optimizer):
+class CrossEntropyMethod(Optimizer):  # TODO
     """Cross-entropy method optimizer object."""
 
     def __init__(self,

@@ -49,7 +49,7 @@ class TestGeneticAlgorithm(unittest.TestCase):
         pass  # TODO
 
 
-class TestCrossEntropyMethod(unittest.TestCase):
+class TestCrossEntropyMethod(unittest.TestCase):  # TODO
     """Tests the CrossEntropyMethod object."""
 
     def setUp(self):
@@ -58,7 +58,11 @@ class TestCrossEntropyMethod(unittest.TestCase):
     def tearDown(self):
         pass  # TODO
 
-    def test_pass(self):
+    def test_case1(self):
+        """TODO."""
+        pass  # TODO
+
+    def test_case2(self):
         """TODO."""
         pass  # TODO
 
