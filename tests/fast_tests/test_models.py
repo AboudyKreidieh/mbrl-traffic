@@ -79,5 +79,19 @@ class TestNoOpModel(unittest.TestCase):
         pass  # TODO
 
 
+class TestNonLocalModel(unittest.TestCase):
+    """Tests the NonLocalModel object."""
+
+    def setUp(self):
+        pass  # TODO
+
+    def tearDown(self):
+        pass  # TODO
+
+    def test_pass(self):
+        """TODO."""
+        pass  # TODO
+
+
 if __name__ == '__main__':
     unittest.main()
