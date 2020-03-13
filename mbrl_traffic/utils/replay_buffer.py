@@ -2,7 +2,7 @@
 import numpy as np
 
 
-class ReplayBuffer(object):
+class ReplayBuffer:
     """Experience replay buffer."""
 
     def __init__(self, buffer_size, batch_size, obs_dim, ac_dim):

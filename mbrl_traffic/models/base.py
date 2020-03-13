@@ -1,7 +1,7 @@
 """Script containing the base model object."""
 
 
-class Model(object):
+class Model:
     """Base model object.
 
     The model object is used to estimate next-step observations given current

@@ -1,7 +1,7 @@
 """Script containing the base policy object."""
 
 
-class Policy(object):
+class Policy:
     """Base Actor Critic Policy.
 
     Attributes

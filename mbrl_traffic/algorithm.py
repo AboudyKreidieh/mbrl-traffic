@@ -24,7 +24,7 @@ from mbrl_traffic.utils.train import KSHOOT_POLICY_PARAMS
 from mbrl_traffic.utils.train import SAC_POLICY_PARAMS
 
 
-class ModelBasedRLAlgorithm(object):
+class ModelBasedRLAlgorithm:
     """Model-based RL algorithm class.
 
     Attributes
