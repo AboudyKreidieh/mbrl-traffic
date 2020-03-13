@@ -106,6 +106,7 @@ class FeedForwardModel(Model):
         self.obs_ph = []
         self.obs1_ph = []
         self.action_ph = []
+        self.policy_saver = []
 
         # Create clipping terms for the model logstd. See: TODO
         self.max_logstd = tf.Variable(
@@ -190,6 +191,11 @@ class FeedForwardModel(Model):
                                         for shape in critic_shapes])
                 print('  model shapes: {}'.format(critic_shapes))
                 print('  model params: {}'.format(critic_nb_params))
+
+            # saver for the policy variables
+            self.policy_saver.append(tf.compat.v1.train.Saver(
+                var_list=get_trainable_vars('model_{}'.format(i)))
+            )
 
     def _setup_model(self, obs, action, ob_space, reuse=False, scope="rho"):
         """Create the trainable parameters of the Worker dynamics model.
@@ -309,8 +315,12 @@ class FeedForwardModel(Model):
 
     def save(self, save_path):
         """See parent class."""
-        raise NotImplementedError
+        for i in range(self.num_ensembles):
+            file_path = save_path + 'model_{}'.format(i)
+            self.policy_saver[i].save(self.sess, file_path)
 
     def load(self, load_path):
         """See parent class."""
-        raise NotImplementedError
+        for i in range(self.num_ensembles):
+            file_path = load_path + 'model_{}'.format(i)
+            self.policy_saver[i].restore(self.sess, file_path)
