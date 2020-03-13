@@ -281,7 +281,7 @@ class LWRModel(Model):
     def compute_loss(self, states, actions, next_states):
         """See parent class."""
         # Compute the predicted next states.
-        expected_next_states = self.get_next_obs(states, actions)
+        # expected_next_states = self.get_next_obs(states, actions)
 
         # Compute the loss.
         return None  # FIXME
@@ -289,3 +289,11 @@ class LWRModel(Model):
     def get_td_map(self):
         """See parent class."""
         return {}
+
+    def save(self, save_path):
+        """See parent class."""
+        raise NotImplementedError
+
+    def load(self, load_path):
+        """See parent class."""
+        raise NotImplementedError
