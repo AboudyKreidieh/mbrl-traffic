@@ -37,7 +37,7 @@ class TestARZModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestFeedForwardModel(unittest.TestCase):
+class TestFeedForwardModel(unittest.TestCase):  # TODO
     """Tests the FeedForwardModel object."""
 
     def setUp(self):

@@ -307,10 +307,10 @@ class FeedForwardModel(Model):
         """See parent class."""
         return {}  # FIXME
 
-    def save(self, save_path):
+    def save(self, save_path):  # TODO
         """See parent class."""
         raise NotImplementedError
 
-    def load(self, load_path):
+    def load(self, load_path):  # TODO
         """See parent class."""
         raise NotImplementedError
