@@ -1,6 +1,4 @@
 """Script containing the non-local model object."""
-import numpy as np
-
 from mbrl_traffic.models.base import Model
 
 
