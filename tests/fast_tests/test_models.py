@@ -65,7 +65,7 @@ class TestLWRModel(unittest.TestCase):
         pass  # TODO
 
 
-class TestNoOpModel(unittest.TestCase):
+class TestNoOpModel(unittest.TestCase):  # TODO
     """Tests the NoOpModel object."""
 
     def setUp(self):
