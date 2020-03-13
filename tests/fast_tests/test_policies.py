@@ -39,7 +39,7 @@ class TestKShootPolicy(unittest.TestCase):
         pass  # TODO
 
 
-class TestNoOpPolicy(unittest.TestCase):
+class TestNoOpPolicy(unittest.TestCase):  # TODO
     """Tests the NoOpPolicy object."""
 
     def setUp(self):
