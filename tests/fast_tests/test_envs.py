@@ -69,7 +69,7 @@ class TestParams(unittest.TestCase):
             self.assertEqual(actual_flow_params[param].__name__,
                              expected_flow_params[param].__name__)
 
-    def test_merge(self):
+    def test_merge(self):  # FIXME
         """Check the validity of the flow_params dict in params/merge.py."""
         inflow = InFlows()
         inflow.add(
@@ -139,7 +139,7 @@ class TestParams(unittest.TestCase):
             self.assertEqual(actual_flow_params[param].__name__,
                              expected_flow_params[param].__name__)
 
-    def test_highway(self):
+    def test_highway(self):  # TODO
         """Check the validity of the flow_params dict in params/highway.py."""
         pass  # TODO
 
