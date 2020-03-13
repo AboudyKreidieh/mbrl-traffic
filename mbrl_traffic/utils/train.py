@@ -10,6 +10,7 @@ from mbrl_traffic.models import LWRModel
 from mbrl_traffic.models import ARZModel
 from mbrl_traffic.models import NoOpModel
 from mbrl_traffic.models import FeedForwardModel
+from mbrl_traffic.models import NonLocalModel
 from mbrl_traffic.utils.optimizers import NelderMead
 from mbrl_traffic.utils.optimizers import GeneticAlgorithm
 from mbrl_traffic.utils.optimizers import CrossEntropyMethod
@@ -105,6 +106,15 @@ FEEDFORWARD_MODEL_PARAMS = dict(
     stochastic=True,
     # number of ensemble models
     num_ensembles=1,
+)
+
+
+# =========================================================================== #
+#                     Model parameters for NonLocalModel                      #
+# =========================================================================== #
+
+NON_LOCAL_MODEL_PARAMS = dict(
+
 )
 
 
@@ -618,7 +628,7 @@ def get_model_params_from_args(args):
         }
 
     elif args.model == "NonLocalModel":
-        model_cls = None  # FIXME
+        model_cls = NonLocalModel
         model_params = {
 
         }  # FIXME
