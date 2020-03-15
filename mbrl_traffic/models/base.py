@@ -83,6 +83,25 @@ class Model:
         """
         raise NotImplementedError
 
+    def log_loss(self, y_true, mean, std):
+        """Compute the Gaussian Log-Likelihood loss.
+
+        Parameters
+        ----------
+        y_true : array_like
+            (batch_size, obs_dim) matrix of actual target variable
+        mean : array_like
+            (batch_size, ac_dim) matrix of prediction means
+        std : array_like
+            (batch_size, obs_dim) matrix of prediction stds
+
+        Returns
+        -------
+        float
+            the output from the loss function
+        """
+        raise NotImplementedError
+
     def compute_loss(self, states, actions, next_states):
         """Compute the loss for a given set of data-points.
 
