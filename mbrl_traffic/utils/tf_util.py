@@ -237,11 +237,11 @@ def layer(val,
     tf.Variable
         the output from the layer
     """
-    val = tf.layers.dense(
-        val, num_outputs, name=name, kernel_initializer=kernel_initializer)
+    val = tf.keras.layers.Dense(
+        num_outputs, kernel_initializer=kernel_initializer, name=name)(val)
 
     if layer_norm:
-        val = tf.contrib.layers.layer_norm(val, center=True, scale=True)
+        val = tf.keras.layers.LayerNormalizationm()(val)
 
     if act_fun is not None:
         val = act_fun(val)
