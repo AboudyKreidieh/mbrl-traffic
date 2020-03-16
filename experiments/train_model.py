@@ -12,6 +12,9 @@ import numpy as np
 import pandas as pd
 from gym.spaces import Box
 import time
+from time import strftime
+from pathlib import Path
+
 
 from mbrl_traffic.utils.replay_buffer import ReplayBuffer
 from mbrl_traffic.utils.train import parse_model_params
@@ -338,6 +341,14 @@ def log_results(model, interval, train_loss, test_loss):
 
 def main(args):
     """Perform the complete model training operation."""
+    # # Create a save directory folder (if it doesn't exist).
+    # The time when the current experiment started.
+    now = strftime("%Y-%m-%d-%H:%M:%S")
+    directory = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        "results/{}/{}/{}".format(args.network_type, args.simulation_type, now))
+    Path(directory).mkdir(parents=True, exist_ok=True)
+
     # # Create a tensorflow session.
     # graph = tf.Graph()
     # with graph.as_default():
