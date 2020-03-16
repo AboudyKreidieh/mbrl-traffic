@@ -43,20 +43,15 @@ class TestNelderMead(unittest.TestCase):
         )
 
         # check the attributes
-        del optimizer  # TODO
-
-        # initialize the optimizer with specified optional parameters
-        optimizer = NelderMead(
-            x0=0,
-            param_low=-1,
-            param_high=1,
-            fitness_fn=v_eq_max_function,
-            verbose=2,
-            # TODO
-        )
-
-        # check the attributes
-        del optimizer  # TODO
+        self.assertEqual(optimizer.x0, 0)
+        self.assertEqual(optimizer.bnds, (-1, 1))
+        self.assertEqual(optimizer.options, {
+            'disp': True,
+            'initial_simplex': None,
+            'xatol': 1e-8,
+            'fatol': 1000,
+            'adaptive': False
+        })
 
     def test_solve(self):
         """Checks the solve method for a 1-D problem.
