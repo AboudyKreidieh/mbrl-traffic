@@ -87,4 +87,4 @@ class NelderMead(Optimizer):
             options=self.options
         )
 
-        return sol.x
+        return sol.x, sol.fun
