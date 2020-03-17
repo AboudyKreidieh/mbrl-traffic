@@ -8,7 +8,7 @@ from flow.envs.ring.accel import AccelEnv, ADDITIONAL_ENV_PARAMS
 from flow.networks.ring import RingNetwork, ADDITIONAL_NET_PARAMS
 
 # Number of vehicles in the network
-NUM_VEHICLES = 75
+NUM_VEHICLES = 50
 # Length of the ring (in meters)
 RING_LENGTH = 1500
 # Number of lanes in the ring
@@ -18,11 +18,13 @@ vehicles = VehicleParams()
 vehicles.add(
     veh_id="idm",
     acceleration_controller=(IDMController, {
-        "noise": 0.2,
+        "a": 0.3,
+        "b": 2.0,
+        "noise": 0.5,
     }),
     routing_controller=(ContinuousRouter, {}),
     car_following_params=SumoCarFollowingParams(
-        min_gap=0,
+        min_gap=0.5,
     ),
     lane_change_params=SumoLaneChangeParams(
         lane_change_mode="strategic",
@@ -49,6 +51,7 @@ flow_params = dict(
 
     # sumo-related parameters (see flow.core.params.SumoParams)
     sim=SumoParams(
+        use_ballistic=True,
         render=True,
         sim_step=0.5,
     ),
@@ -73,5 +76,6 @@ flow_params = dict(
     # reset (see flow.core.params.InitialConfig)
     initial=InitialConfig(
         spacing="random",
+        min_gap=0.5,
     ),
 )

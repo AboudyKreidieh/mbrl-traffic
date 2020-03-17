@@ -3,7 +3,7 @@
 In the absence of autonomous vehicles, the network exhibits properties of
 convective instability, with perturbations propagating upstream from the merge
 point before exiting the network.
-"""  # TODO
+"""
 from flow.core.params import SumoParams, EnvParams, NetParams
 from flow.core.params import InitialConfig, InFlows, SumoCarFollowingParams
 from flow.core.params import VehicleParams
@@ -12,16 +12,18 @@ from flow.envs.merge import MergePOEnv, ADDITIONAL_ENV_PARAMS
 from flow.networks import MergeNetwork
 
 # inflow rate at the highway
-FLOW_RATE = 2000
+FLOW_RATE = 1600
 
 vehicles = VehicleParams()
 vehicles.add(
     veh_id="human",
     acceleration_controller=(IDMController, {
-        "noise": 0.2,
+        "a": 0.3,
+        "b": 2.0,
+        "noise": 0.5,
     }),
     car_following_params=SumoCarFollowingParams(
-        min_gap=0,
+        min_gap=0.5,
     ),
     num_vehicles=5)
 
@@ -31,13 +33,13 @@ inflow.add(
     edge="inflow_highway",
     vehs_per_hour=FLOW_RATE,
     depart_lane="free",
-    depart_speed=10)
+    depart_speed=30)
 inflow.add(
     veh_type="human",
     edge="inflow_merge",
     vehs_per_hour=100,
     depart_lane="free",
-    depart_speed=7.5)
+    depart_speed=20)
 
 
 flow_params = dict(
@@ -55,6 +57,7 @@ flow_params = dict(
 
     # sumo-related parameters (see flow.core.params.SumoParams)
     sim=SumoParams(
+        use_ballistic=True,
         render=True,
         sim_step=0.5,
         restart_instance=False,
