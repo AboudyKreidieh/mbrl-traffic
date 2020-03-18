@@ -15,8 +15,9 @@ from mbrl_traffic.models import NoOpModel
 from mbrl_traffic.policies import SACPolicy
 from mbrl_traffic.policies import KShootPolicy
 from mbrl_traffic.utils.tf_util import make_session
-from mbrl_traffic.utils.misc import ensure_dir, create_env
+from mbrl_traffic.utils.misc import ensure_dir
 from mbrl_traffic.utils.replay_buffer import ReplayBuffer
+from mbrl_traffic.utils.train import create_env
 from mbrl_traffic.utils.train import LWR_MODEL_PARAMS
 from mbrl_traffic.utils.train import ARZ_MODEL_PARAMS
 from mbrl_traffic.utils.train import FEEDFORWARD_MODEL_PARAMS
@@ -187,7 +188,6 @@ class ModelBasedRLAlgorithm(object):
         """
         self.policy = policy
         self.model = model
-        self.env_name = deepcopy(env)
         self.env = create_env(env, render, evaluate=False)
         self.eval_env = create_env(eval_env, render_eval, evaluate=True)
         self.nb_eval_episodes = nb_eval_episodes
@@ -259,9 +259,9 @@ class ModelBasedRLAlgorithm(object):
 
         # Create the model variables and operations.
         if _init_setup_model:
-            self.trainable_vars = self.setup_model()
+            self.trainable_vars = self.setup_tf()
 
-    def setup_model(self):
+    def setup_tf(self):
         """Create the graph, session, policy, and summary objects."""
         self.graph = tf.Graph()
         with self.graph.as_default():
@@ -421,12 +421,6 @@ class ModelBasedRLAlgorithm(object):
             number of timesteps that the policy is run before training to
             initialize the replay buffer with samples
         """
-        # Create a saver object.
-        self.saver = tf.compat.v1.train.Saver(
-            self.trainable_vars,
-            max_to_keep=total_timesteps // save_interval
-        )
-
         # Make sure that the log directory exists, and if not, make it.
         ensure_dir(log_dir)
         ensure_dir(os.path.join(log_dir, "checkpoints"))
@@ -457,7 +451,7 @@ class ModelBasedRLAlgorithm(object):
             self.obs = self.env.reset()
 
             # Collect preliminary random samples.
-            print("Collecting pre-samples...")
+            print("Collecting initial exploration samples...")
             self._collect_samples(run_steps=initial_exploration_steps,
                                   random_actions=True)
             print("Done!")
@@ -555,7 +549,9 @@ class ModelBasedRLAlgorithm(object):
         save_path : str
             Prefix of filenames created for the checkpoint
         """
-        self.saver.save(self.sess, save_path, global_step=self.total_steps)
+        save_path = "{}-{}".format(save_path, self.total_steps)
+        self.model_tf.save(save_path)
+        self.policy_tf.save(save_path)
 
     def load(self, load_path):
         """Load model parameters from a checkpoint.
@@ -565,7 +561,8 @@ class ModelBasedRLAlgorithm(object):
         load_path : str
             location of the checkpoint
         """
-        self.saver.restore(self.sess, load_path)
+        self.model_tf.load(load_path)
+        self.policy_tf.load(load_path)
 
     def _collect_samples(self, run_steps=None, random_actions=False):
         """Perform the sample collection operation.
@@ -632,14 +629,14 @@ class ModelBasedRLAlgorithm(object):
         the policy, and the summary information is logged to tensorboard.
         """
         # Run a step of training from batch.
-        critic_loss, actor_loss = self.policy_tf.update()
+        actor_loss, critic_loss, extra = self.policy_tf.update()
 
         # Add actor and critic loss information for logging purposes.
         self.epoch_q1_losses.append(critic_loss[0])
         self.epoch_q2_losses.append(critic_loss[1])
         self.epoch_value_losses.append(critic_loss[2])
-        self.epoch_alpha_losses.append(actor_loss[0])
-        self.epoch_actor_losses.append(actor_loss[1])
+        self.epoch_alpha_losses.append(extra["alpha_loss"])
+        self.epoch_actor_losses.append(actor_loss)
 
     def _train_model(self):
         """Perform the training operation to the model.
