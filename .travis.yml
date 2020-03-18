@@ -20,7 +20,6 @@ install:
   - pushd $HOME
   - git clone https://github.com/flow-project/flow
   - pushd flow
-  - git checkout i210_merge  # this is temporary
   - conda env create -f environment.yml
   - source activate flow
   - pip install -e .

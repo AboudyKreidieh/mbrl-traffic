@@ -1,4 +1,4 @@
-"""Example of vehicles in a section of the I-210."""  # TODO
+"""Example of vehicles in a section of the I-210."""
 import os
 
 import flow.config as config
