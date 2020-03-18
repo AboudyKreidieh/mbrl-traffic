@@ -4,17 +4,26 @@ import numpy as np
 import random
 
 class CrossEntropyMethod(Optimizer):  # TODO
-    """Cross-entropy method optimizer object."""
+    """Cross-entropy method optimizer object. Adopted from
+    https://github.com/jerrylin1121/cross_entropy_method"""
 
     def __init__(self,
                  param_low,
                  param_high,
                  fitness_fn,
-                 verbose=2):
+                 verbose=2,
+                 N=100,
+                 Ne=10,
+                 argmin=True,
+                 v_min=None,
+                 v_max=None,
+                 init_scale=1,
+                 sampleMethod='Gaussian',
+                 ):
         """Instantiate the optimizer.
-
         Parameters
         ----------
+        TODO: rename parameters and clean up
         param_low : array_like
             the minimum value for each parameter
         param_high : array_like
@@ -32,17 +41,9 @@ class CrossEntropyMethod(Optimizer):  # TODO
             verbose=verbose
         )
 
-    def solve(self, num_steps=1000, termination_fn=None):
-        """See parent class."""
-        pass
-
-
-class CEM():
-    def __init__(self, func, d, maxits=500, N=100, Ne=10, argmin=True, v_min=None, v_max=None, init_scale=1,
-                 sampleMethod='Gaussian'):
-        self.func = func  # target function
-        self.d = d  # dimension of function input X
-        self.maxits = maxits  # maximum iteration
+        # self.func = func  # target function
+        # self.d = d  # dimension of function input X
+        # self.maxits = maxits  # maximum iteration
         self.N = N  # sample N examples each iteration
         self.Ne = Ne  # using better Ne examples to update mu and sigma
         self.reverse = not argmin  # try to maximum or minimum the target function
@@ -52,6 +53,15 @@ class CEM():
 
         assert sampleMethod == 'Gaussian' or sampleMethod == 'Uniform'
         self.sampleMethod = sampleMethod  # which sample method gaussian or uniform, default to gaussian
+
+    def solve(self, num_steps=1000, termination_fn=None):
+        """TODO: verify this works"""
+        """See parent class."""
+        self.func = self.fitness_fn  # target function
+        self.d = d  # dimension of function input X
+        self.maxits = num_steps  # maximum iteration
+
+        return self.eval(t)
 
     def eval(self, instr):
         """evalution and return the solution"""
@@ -149,13 +159,13 @@ class CEM():
         return s
 
 
+
 def func(a1, a2):
     c = a1 - a2
     return [_c[0] * _c[0] + _c[1] * _c[1] for _c in c]
 
-
 if __name__ == '__main__':
-    cem = CEM(func, 2, sampleMethod='Uniform', v_min=[-5., -5.], v_max=[5., 5.])
+    cem = CrossEntropyMethod(func, 2, sampleMethod='Uniform', v_min=[-5., -5.], v_max=[5., 5.])
     t = np.array([1, 2])
     v = cem.eval(t)
     print(v, func(t.reshape([-1, 2]), v.reshape([-1, 2])))
