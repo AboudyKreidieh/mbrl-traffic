@@ -629,7 +629,8 @@ class SACPolicy(Policy):
         q1_loss, q2_loss, vf_loss, actor_loss, alpha_loss, *_ = self.sess.run(
             step_ops, feed_dict)
 
-        return (q1_loss, q2_loss, vf_loss), (alpha_loss, actor_loss)
+        return actor_loss, (q1_loss, q2_loss, vf_loss), \
+            {"alpha_loss": alpha_loss}
 
     def get_action(self, obs, apply_noise, random_actions):
         """See parent class."""

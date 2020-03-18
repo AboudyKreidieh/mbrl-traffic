@@ -27,6 +27,7 @@ class TestParams(unittest.TestCase):
             network=RingNetwork,
             simulator='traci',
             sim=SumoParams(
+                use_ballistic=True,
                 render=True,
                 sim_step=0.5,
             ),
@@ -49,6 +50,7 @@ class TestParams(unittest.TestCase):
             ),
             initial=InitialConfig(
                 spacing="random",
+                min_gap=0.5,
             ),
         )
 
@@ -77,13 +79,13 @@ class TestParams(unittest.TestCase):
             edge="inflow_highway",
             vehs_per_hour=2000,
             depart_lane="free",
-            depart_speed=10)
+            depart_speed=30)
         inflow.add(
             veh_type="human",
             edge="inflow_merge",
             vehs_per_hour=100,
             depart_lane="free",
-            depart_speed=7.5)
+            depart_speed=20)
 
         expected_flow_params = dict(
             exp_tag='merge-baseline',
@@ -91,6 +93,7 @@ class TestParams(unittest.TestCase):
             network=MergeNetwork,
             simulator='traci',
             sim=SumoParams(
+                use_ballistic=True,
                 render=True,
                 sim_step=0.5,
                 restart_instance=False,
