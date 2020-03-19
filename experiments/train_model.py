@@ -323,11 +323,13 @@ def create_model(args, sess, replay_buffer):
     return model
 
 
-def log_results(file_path, model, interval, train_loss, test_loss):
+def log_results(log_dir, model, interval, train_loss, test_loss):
     """Record training and testing results.
 
     Parameters
     ----------
+    log_dir : str
+        the directory where the statistics should be stored
     model : mbrl_traffic.models.*
         model with the parameters as they were specified in the command terminal
     interval : int
@@ -348,7 +350,8 @@ def log_results(file_path, model, interval, train_loss, test_loss):
     # td_map = model.get_td_map()
 
     # Save log_data in a csv file.
-    if file_path is not None:
+    if log_dir is not None:
+        file_path = log_dir + "results.csv"
         exists = os.path.exists(file_path)
         with open(file_path, 'a') as f:
             w = csv.DictWriter(f, fieldnames=log_data.keys())
@@ -392,7 +395,7 @@ def main(args):
     #             states=testing_set["states"],
     #             actions=testing_set["actions"],
     #             next_states=testing_set["next_states"],
-    #         )
+    #         )git 
     #
             # # Log the results and store the model parameters.
             # if i % args.log_interval == 0:
