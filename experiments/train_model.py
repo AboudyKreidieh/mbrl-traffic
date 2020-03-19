@@ -8,6 +8,7 @@ import argparse
 import sys
 # import tensorflow as tf
 import random
+import csv
 import numpy as np
 import pandas as pd
 from gym.spaces import Box
@@ -87,6 +88,14 @@ def parse_args(args):
     parser.add_argument(
         '--batch_size', type=int, default=128,
         help='the training batch size for every step')
+    parser.add_argument(
+        '--log_interval', type=int, default=2000,
+        help='the number of training steps before logging training results. '
+             'Should be between 0 and the number of training steps.')
+    parser.add_argument(
+        '--save_interval', type=int, default=10000,
+        help='the number of training steps before saving model parameters. '
+             'Should be between 0 and the number of training steps.')
 
     # add model-specific arguments
     parser = parse_model_params(parser)
@@ -314,29 +323,38 @@ def create_model(args, sess, replay_buffer):
     return model
 
 
-def log_results(model, interval, train_loss, test_loss):
+def log_results(file_path, model, interval, train_loss, test_loss):
     """Record training and testing results.
 
     Parameters
     ----------
-    model : TODO
-        TODO
-    interval : TODO
-        TODO
-    train_loss : TODO
-        TODO
-    test_loss : TODO
-        TODO
+    model : mbrl_traffic.models.*
+        model with the parameters as they were specified in the command terminal
+    interval : int
+        time step interval to record results
+    train_loss : float
+        the loss value on train set
+    test_loss : float
+        the loss value on test set
     """
-    # # Generic data
-    # log_data = {
-    #     "interval": interval,
-    #     "train/loss": train_loss,
-    #     "test/loss": test_loss,
-    # }
+    # Generic data
+    log_data = {
+        "interval": interval,
+        "train/loss": train_loss,
+        "test/loss": test_loss
+    }
     #
     # # Data from the td map.
     # td_map = model.get_td_map()
+
+    # Save log_data in a csv file.
+    if file_path is not None:
+        exists = os.path.exists(file_path)
+        with open(file_path, 'a') as f:
+            w = csv.DictWriter(f, fieldnames=log_data.keys())
+            if not exists:
+                w.writeheader()
+            w.writerow(log_data)
 
 
 def main(args):
@@ -376,9 +394,11 @@ def main(args):
     #             next_states=testing_set["next_states"],
     #         )
     #
-    #         # Log the results and store the model parameters.
-    #         if i % args.log_interval == 0:
-    #             log_results(model, i, train_loss, test_loss)
+            # # Log the results and store the model parameters.
+            # if i % args.log_interval == 0:
+            #     log_results(directory, model, i, train_loss, test_loss)
+            # if i % args.save_interval == 0:
+            #     model.save(directory)
 
     return 0
 
