@@ -43,7 +43,7 @@ class NoOpPolicy(Policy):
 
     def update(self):
         """Do nothing."""
-        return (0, 0, 0), 0
+        return 0, (0,), {}
 
     def get_action(self, obs, apply_noise, random_actions):
         """Return a random action."""
@@ -51,7 +51,7 @@ class NoOpPolicy(Policy):
 
     def value(self, obs, action):
         """Return an default value."""
-        return 0, 0, 0
+        return 0,
 
     def get_td_map(self):
         """Return an empty dictionary."""
