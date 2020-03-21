@@ -4,7 +4,8 @@ import numpy as np
 import random
 
 class CrossEntropyMethod(Optimizer):  # TODO
-    """Cross-entropy method optimizer object."""
+    """Cross-entropy method optimizer object. Adopted from
+    https://github.com/jerrylin1121/cross_entropy_method"""
 
     def __init__(self,
                  param_low,
@@ -18,7 +19,6 @@ class CrossEntropyMethod(Optimizer):  # TODO
                  init_scale=1,
                  samplemethod='Gaussian'):
         """Instantiate the optimizer.
-
         Parameters
         ----------
         param_low : array_like
@@ -77,8 +77,6 @@ class CrossEntropyMethod(Optimizer):  # TODO
             s = self.__functionReward(instr, x)
             s = self.__sortSample(s)
             x = np.array([s[i][0] for i in range(np.shape(s)[0])])
-            l = np.array([s[i][1] for i in range(np.shape(s)[0])])
-
             _min, _max = self.__updateUniformParams(x)
             t += 1
 
@@ -162,3 +160,5 @@ class CrossEntropyMethod(Optimizer):  # TODO
         s = sorted(s, key=lambda x: x[1], reverse=self.reverse)
 
         return s
+
+
