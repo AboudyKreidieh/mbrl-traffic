@@ -10,7 +10,13 @@ class CrossEntropyMethod(Optimizer):  # TODO
                  param_low,
                  param_high,
                  fitness_fn,
-                 verbose=2):
+                 x0,
+                 verbose=2,
+                 samples=5,
+                 ne=10,
+                 argmin=True,
+                 init_scale=1,
+                 samplemethod='Gaussian'):
         """Instantiate the optimizer.
 
         Parameters
@@ -31,27 +37,27 @@ class CrossEntropyMethod(Optimizer):  # TODO
             fitness_fn=fitness_fn,
             verbose=verbose
         )
+        self.func = fitness_fn  # target function
+        self.d = len(x0)  # dimension of function input X: len(x0)
+        self.N = samples  # sample N examples each iteration
+        self.Ne = ne  # using better Ne examples to update mu and sigma
+        self.reverse = not argmin  # try to maximum or minimum the target function (not argmin finds the minimum)
+        self.v_min = param_low  # the value minimum
+        self.v_max = param_high  # the value maximum
+        self.init_coef = init_scale  # sigma initial value
+        self.x0 = x0  # np.array like
+
+        assert samplemethod == 'Gaussian' or samplemethod == 'Uniform'
+        self.sampleMethod = samplemethod  # which sample method gaussian or uniform, default to gaussian
 
     def solve(self, num_steps=1000, termination_fn=None):
         """See parent class."""
-        pass
+        # specify the number of steps this will run
+        self.maxits = num_steps
 
+        sol = self.eval(self.x0)
 
-class CEM():
-    def __init__(self, func, d, maxits=500, N=100, Ne=10, argmin=True, v_min=None, v_max=None, init_scale=1,
-                 sampleMethod='Gaussian'):
-        self.func = func  # target function
-        self.d = d  # dimension of function input X
-        self.maxits = maxits  # maximum iteration
-        self.N = N  # sample N examples each iteration
-        self.Ne = Ne  # using better Ne examples to update mu and sigma
-        self.reverse = not argmin  # try to maximum or minimum the target function
-        self.v_min = v_min  # the value minimum
-        self.v_max = v_max  # the value maximum
-        self.init_coef = init_scale  # sigma initial value
-
-        assert sampleMethod == 'Gaussian' or sampleMethod == 'Uniform'
-        self.sampleMethod = sampleMethod  # which sample method gaussian or uniform, default to gaussian
+        return sol, self.func(sol)
 
     def eval(self, instr):
         """evalution and return the solution"""
@@ -61,7 +67,7 @@ class CEM():
             return self.evalUniform(instr)
 
     def evalUniform(self, instr):
-        # initial parameters
+
         t, _min, _max = self.__initUniformParams()
 
         # random sample all dimension each time
@@ -71,8 +77,8 @@ class CEM():
             s = self.__functionReward(instr, x)
             s = self.__sortSample(s)
             x = np.array([s[i][0] for i in range(np.shape(s)[0])])
+            l = np.array([s[i][1] for i in range(np.shape(s)[0])])
 
-            # update parameters
             _min, _max = self.__updateUniformParams(x)
             t += 1
 
@@ -141,21 +147,18 @@ class CEM():
     def __functionReward(self, instr, x):
         bi = np.reshape(instr, [1, -1])
         bi = np.repeat(bi, self.N, axis=0)
-        return zip(x, self.func(bi, x))
+
+        # self.func (fitness_func) should support matrix  operations for faster computations
+        value = []
+        for i in np.arange(len(x)):
+            # evaluate the value of each guess (x)
+            val2 = self.func(x[i])
+            value = np.append(value, val2)
+
+        return zip(x, value)
 
     def __sortSample(self, s):
         """sort data by function return"""
         s = sorted(s, key=lambda x: x[1], reverse=self.reverse)
+
         return s
-
-
-def func(a1, a2):
-    c = a1 - a2
-    return [_c[0] * _c[0] + _c[1] * _c[1] for _c in c]
-
-
-if __name__ == '__main__':
-    cem = CEM(func, 2, sampleMethod='Uniform', v_min=[-5., -5.], v_max=[5., 5.])
-    t = np.array([1, 2])
-    v = cem.eval(t)
-    print(v, func(t.reshape([-1, 2]), v.reshape([-1, 2])))
