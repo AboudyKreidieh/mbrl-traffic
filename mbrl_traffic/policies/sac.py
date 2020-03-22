@@ -2,6 +2,7 @@
 import tensorflow as tf
 import numpy as np
 from functools import reduce
+import os
 
 from mbrl_traffic.policies.base import Policy
 from mbrl_traffic.utils.tf_util import layer
@@ -241,8 +242,8 @@ class SACPolicy(Policy):
 
         # Create the target update operations.
         init, soft = get_target_updates(
-            get_trainable_vars('model/value_fns/vf'),
-            get_trainable_vars('target/value_fns/vf'),
+            get_trainable_vars('policy/model/value_fns/vf'),
+            get_trainable_vars('policy/target/value_fns/vf'),
             tau, verbose)
         self.target_init_updates = init
         self.target_soft_updates = soft
@@ -261,6 +262,13 @@ class SACPolicy(Policy):
         # Setup the running means and standard deviations of the model inputs
         # and outputs.
         self._setup_stats()
+
+        # =================================================================== #
+        # Step 5: Create a saver object to store the model parameters.        #
+        # =================================================================== #
+
+        self.saver = tf.compat.v1.train.Saver(
+            get_trainable_vars("policy/"), max_to_keep=10)
 
     def make_actor(self, obs, action, reuse=False, scope="pi"):
         """Create the actor variables.
@@ -446,7 +454,7 @@ class SACPolicy(Policy):
         if self.verbose >= 2:
             print('setting up critic optimizer')
 
-        scope_name = 'model/value_fns'
+        scope_name = 'policy/model/value_fns'
 
         if self.verbose >= 2:
             for name in ['qf1', 'qf2', 'vf']:
@@ -502,7 +510,7 @@ class SACPolicy(Policy):
         if self.verbose >= 2:
             print('setting up actor and alpha optimizers')
 
-        scope_name = 'model/pi/'
+        scope_name = 'policy/model/pi/'
 
         if self.verbose >= 2:
             actor_shapes = [var.get_shape().as_list()
@@ -681,10 +689,10 @@ class SACPolicy(Policy):
 
         return td_map
 
-    def save(self, save_path):  # TODO
+    def save(self, save_path):
         """See parent class."""
-        raise NotImplementedError
+        self.saver.save(self.sess, os.path.join(save_path, "policy"))
 
-    def load(self, load_path):  # TODO
+    def load(self, load_path):
         """See parent class."""
-        raise NotImplementedError
+        self.saver.restore(self.sess, load_path)
