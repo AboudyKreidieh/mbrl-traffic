@@ -29,7 +29,8 @@ def run_exp(env,
             seed,
             eval_interval,
             log_interval,
-            save_interval):
+            save_interval,
+            initial_exploration_steps):
     """Run a single training procedure.
 
     Parameters
@@ -82,6 +83,7 @@ def run_exp(env,
         log_interval=log_interval,
         eval_interval=eval_interval,
         save_interval=save_interval,
+        initial_exploration_steps=initial_exploration_steps,
         seed=seed,
     )
 
@@ -148,7 +150,8 @@ def main(args):
             seed=seed,
             eval_interval=args.eval_interval,
             log_interval=args.log_interval,
-            save_interval=args.save_interval
+            save_interval=args.save_interval,
+            initial_exploration_steps=args.initial_exploration_steps,
         )
 
 

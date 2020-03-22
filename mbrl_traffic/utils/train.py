@@ -190,6 +190,10 @@ def parse_params(args):
         '--save_interval', type=int, default=50000,
         help='number of simulation steps in the training environment before '
              'the model is saved')
+    parser.add_argument(
+        '--initial_exploration_steps', type=int, default=10000,
+        help='number of timesteps that the policy is run before training to '
+             'initialize the replay buffer with samples')
 
     parser = parse_algorithm_params(parser)
     parser = parse_policy_params(parser)

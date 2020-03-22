@@ -413,7 +413,7 @@ class ModelBasedRLAlgorithm(object):
         save_interval : int
             number of simulation steps in the training environment before the
             model is saved
-        initial_exploration_steps : int, optional
+        initial_exploration_steps : int
             number of timesteps that the policy is run before training to
             initialize the replay buffer with samples
         """

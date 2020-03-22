@@ -599,7 +599,7 @@ class SACPolicy(Policy):
         """Perform a gradient update step."""
         # Not enough samples in the replay buffer.
         if not self.replay_buffer.can_sample():
-            return (0, 0, 0), (0, 0)
+            return 0, (0, 0, 0), {"alpha_loss": 0}
 
         # Get a batch
         obs0, actions, rewards, obs1, terminals1 = self.replay_buffer.sample()
