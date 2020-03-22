@@ -1,7 +1,10 @@
 """Tests for files in the experiments folder."""
 import unittest
+import os
+import shutil
 
 from experiments.simulate import parse_args as parse_args_simulate
+from experiments.train_agent import main as train_agent
 
 
 class TestEvaluateAgent(unittest.TestCase):
@@ -85,15 +88,26 @@ class TestSimulate(unittest.TestCase):
 class TestTrainAgent(unittest.TestCase):
     """Tests the experiments/train_agent.py script."""
 
-    def setUp(self):
-        pass  # TODO
+    def test_train_agent(self):
+        """Test that the main method functions as expected."""
+        # Run the script; verify it executes without failure.
+        train_agent([
+            "MountainCarContinuous-v0",
+            "--total_steps", "2000",
+            "--policy", "SACPolicy",
+            "--model", "NoOpModel",
+            "--initial_exploration_steps", "1",
+        ])
 
-    def tearDown(self):
-        pass  # TODO
+        # Check that the folders were generated.
+        self.assertTrue(os.path.isdir(
+            os.path.join(
+                os.getcwd(),
+                "data/SACPolicy-NoOpModel/MountainCarContinuous-v0")
+        ))
 
-    def test_pass(self):
-        """TODO."""
-        pass  # TODO
+        # Clear anything that was generated.
+        shutil.rmtree(os.path.join(os.getcwd(), "data"))
 
 
 class TestTrainModel(unittest.TestCase):

@@ -152,7 +152,7 @@ SAC_POLICY_PARAMS = dict(
 #                         Command-line parser methods                         #
 # =========================================================================== #
 
-def parse_params():
+def parse_params(args):
     """Parse training options user can specify in command line.
 
     Returns
@@ -166,13 +166,41 @@ def parse_params():
         epilog="python train_agent.py \"ring\" --gamma 0.999")
 
     parser.add_argument(
-        '--env', type=str, help='the name of the environment')
+        'env_name', type=str, help='the name of the environment')
+
+    # optional input parameters
+    parser.add_argument(
+        '--n_training', type=int, default=1,
+        help='Number of training operations to perform. Each training '
+             'operation is performed on a new seed. Defaults to 1.')
+    parser.add_argument(
+        '--total_steps',  type=int, default=1000000,
+        help='Total number of timesteps used during training.')
+    parser.add_argument(
+        '--seed', type=int, default=1,
+        help='Sets the seed for numpy, tensorflow, and random.')
+    parser.add_argument(
+        '--log_interval', type=int, default=2000,
+        help='the number of training steps before logging training results')
+    parser.add_argument(
+        '--eval_interval', type=int, default=50000,
+        help='number of simulation steps in the training environment before '
+             'an evaluation is performed')
+    parser.add_argument(
+        '--save_interval', type=int, default=50000,
+        help='number of simulation steps in the training environment before '
+             'the model is saved')
+    parser.add_argument(
+        '--initial_exploration_steps', type=int, default=10000,
+        help='number of timesteps that the policy is run before training to '
+             'initialize the replay buffer with samples')
 
     parser = parse_algorithm_params(parser)
     parser = parse_policy_params(parser)
     parser = parse_model_params(parser)
 
-    return parser
+    flags, _ = parser.parse_known_args(args)
+    return flags
 
 
 def parse_algorithm_params(parser):
@@ -298,7 +326,7 @@ def parse_model_params(parser):
     # choose the model
     parser.add_argument(
         '--model',
-        type=str, default="FeedForwardModel",
+        type=str, default="NoOpModel",
         help='the type of model being trained. Must be one of: LWRModel, '
              'ARZModel, NonLocalModel, NoOpModel, or FeedForwardModel.')
 
@@ -368,7 +396,7 @@ def parse_model_params(parser):
 
     # parameters for ARZModel
     parser.add_argument(
-        '--tau',
+        '--tau_arz',
         type=str, default=ARZ_MODEL_PARAMS["tau"],
         help='time needed to adjust the velocity of a vehicle from its '
              'current value to the equilibrium speed (in sec). Used as an '
@@ -381,7 +409,7 @@ def parse_model_params(parser):
         help='the model learning rate. Used as an input parameter to the '
              'FeedForwardModel object.')
     parser.add_argument(
-        '--layer_norm',
+        '--layer_norm_model',
         action="store_true",
         help='whether to enable layer normalization. Used as an input '
              'parameter to the FeedForwardModel object.')
@@ -417,20 +445,7 @@ def get_algorithm_params_from_args(args):
     dict
         the parameters for the algorithm as specified in the command line
     """
-    # Collect the training and evaluation environments.
-    env = create_env(args.env, args.render, evaluate=False)
-    eval_env = create_env(args.env, args.render_eval, evaluate=True) \
-        if args.evaluate else None
-
-    # Collect the policy and model attributes.
-    model_cls, model_params = get_model_params_from_args(args)
-    policy_cls, policy_params = get_policy_params_from_args(args)
-
     return {
-        "policy": policy_cls,
-        "model": model_cls,
-        "env": env,
-        "eval_env": eval_env,
         "nb_eval_episodes": args.nb_eval_episodes,
         "policy_update_freq": args.policy_update_freq,
         "model_update_freq": args.model_update_freq,
@@ -442,8 +457,6 @@ def get_algorithm_params_from_args(args):
         "render_eval": args.render_eval,
         "eval_deterministic": True,  # this is kept fixed currently
         "verbose": args.verbose,
-        "policy_kwargs": policy_params,
-        "model_kwargs": model_params,
         "_init_setup_model": True
     }
 
@@ -465,6 +478,10 @@ def create_env(env, render=False, evaluate=False):
     gym.Env or list of gym.Env
         gym-compatible environment(s)
     """
+    # No environment (for evaluation environments):
+    if env is None:
+        return None
+
     # Mixed-autonomy traffic environments
     if env.startswith("av"):
         if env.endswith("ring"):
@@ -611,7 +628,7 @@ def get_model_params_from_args(args):
             "rho_max_max": args.rho_max_max,
             "v_max": args.v_max,
             "v_max_max": args.v_max_max,
-            "tau": args.tau,
+            "tau": args.tau_arz,
             "lam": args.lam,
             "boundary_conditions": args.boundary_conditions,
             "optimizer_cls": optimizer_cls,
@@ -631,7 +648,7 @@ def get_model_params_from_args(args):
         model_cls = FeedForwardModel
         model_params = {
             "model_lr": args.model_lr,
-            "layer_norm": args.layer_norm,
+            "layer_norm": args.layer_norm_model,
             "layers": FEEDFORWARD_MODEL_PARAMS["layers"],
             "act_fun": FEEDFORWARD_MODEL_PARAMS["act_fun"],
             "stochastic": args.stochastic,
