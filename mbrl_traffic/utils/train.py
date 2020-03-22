@@ -395,12 +395,12 @@ def parse_model_params(parser):
              'LWRModel object.')
 
     # parameters for ARZModel
-    # parser.add_argument(
-    #     '--tau',
-    #     type=str, default=ARZ_MODEL_PARAMS["tau"],
-    #     help='time needed to adjust the velocity of a vehicle from its '
-    #          'current value to the equilibrium speed (in sec). Used as an '
-    #          'input parameter to the ARZModel object.')
+    parser.add_argument(
+        '--tau_arz',
+        type=str, default=ARZ_MODEL_PARAMS["tau"],
+        help='time needed to adjust the velocity of a vehicle from its '
+             'current value to the equilibrium speed (in sec). Used as an '
+             'input parameter to the ARZModel object.')
 
     # parameters for FeedForwardModel
     parser.add_argument(
@@ -408,11 +408,11 @@ def parse_model_params(parser):
         type=float, default=FEEDFORWARD_MODEL_PARAMS["model_lr"],
         help='the model learning rate. Used as an input parameter to the '
              'FeedForwardModel object.')
-    # parser.add_argument(
-    #     '--layer_norm',
-    #     action="store_true",
-    #     help='whether to enable layer normalization. Used as an input '
-    #          'parameter to the FeedForwardModel object.')
+    parser.add_argument(
+        '--layer_norm_model',
+        action="store_true",
+        help='whether to enable layer normalization. Used as an input '
+             'parameter to the FeedForwardModel object.')
     parser.add_argument(
         '--stochastic',
         action="store_true",
@@ -628,7 +628,7 @@ def get_model_params_from_args(args):
             "rho_max_max": args.rho_max_max,
             "v_max": args.v_max,
             "v_max_max": args.v_max_max,
-            "tau": args.tau,
+            "tau": args.tau_arz,
             "lam": args.lam,
             "boundary_conditions": args.boundary_conditions,
             "optimizer_cls": optimizer_cls,
@@ -648,7 +648,7 @@ def get_model_params_from_args(args):
         model_cls = FeedForwardModel
         model_params = {
             "model_lr": args.model_lr,
-            "layer_norm": args.layer_norm,
+            "layer_norm": args.layer_norm_model,
             "layers": FEEDFORWARD_MODEL_PARAMS["layers"],
             "act_fun": FEEDFORWARD_MODEL_PARAMS["act_fun"],
             "stochastic": args.stochastic,
