@@ -595,7 +595,7 @@ class SACPolicy(Policy):
         """See parent class."""
         self.sess.run(self.target_init_updates)
 
-    def update(self):
+    def update(self):  # TODO
         """Perform a gradient update step."""
         # Not enough samples in the replay buffer.
         if not self.replay_buffer.can_sample():

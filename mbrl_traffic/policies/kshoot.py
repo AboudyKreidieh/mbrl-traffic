@@ -2,7 +2,7 @@
 from mbrl_traffic.policies.base import Policy
 
 
-class KShootPolicy(Policy):
+class KShootPolicy(Policy):  # TODO
     """K-shoot policy object.
 
     Attributes
