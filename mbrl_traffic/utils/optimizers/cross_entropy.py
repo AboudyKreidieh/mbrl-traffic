@@ -2,6 +2,7 @@
 from mbrl_traffic.utils.optimizers.base import Optimizer
 import numpy as np
 
+
 class CrossEntropyMethod(Optimizer):  # TODO
     """Cross-entropy method optimizer object. Adopted from
     https://github.com/jerrylin1121/cross_entropy_method"""
