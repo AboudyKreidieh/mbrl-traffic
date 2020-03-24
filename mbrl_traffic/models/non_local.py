@@ -10,7 +10,20 @@ from scipy.integrate import cumtrapz
 class NonLocalModel():
     """Non-local model object."""
 
-    def __init__(self, sess, ob_space, ac_space, replay_buffer, verbose):
+    def __init__(self,
+                 sess,
+                 ob_space,
+                 ac_space,
+                 replay_buffer,
+                 verbose,
+                 v_max,
+                 l,
+                 tfinal,
+                 dt,
+                 q_init,
+                 eta,
+                 q_max,
+                 lam):
         """Instantiate the non-local model object.
 
         Parameters
@@ -36,13 +49,45 @@ class NonLocalModel():
             verbose=verbose,
         )
 
+        Nx = len(q_init)  # discretization points
+        self.v_max_new = v_max / l
+        x0 = np.linspace(0, 1, Nx)
+        self.dx = np.mean(np.gradient(x0))
+        self.xfine = np.linspace(0, 1, Nx)
+        self.ti = []
+        self.tfinal = tfinal
+        self.dt = dt
+        q_anti = cumtrapz(q_init, x0, initial=0)  # anti deriv of initial density
+        self.q = np.gradient(q_anti) # gradient of anti deriv
+        self.x = x0
+        self.t = 0
+        self.eta = eta
+        self.q_max = q_max
+        self.lam = lam
+
     def initialize(self):
         """See parent class."""
         raise NotImplementedError
 
-    def get_next_obs(self, obs, action):
-        """See parent class."""
-        raise NotImplementedError
+    def get_next_obs(self, obs, action=None):
+        """TODO: Confirm with Aboudy
+        # q is the gradient of the anti-derivative of the density: see __init__
+            q dictactes how density is updated
+        # x is the variable road spacing which dictates how q is updated (line 123)
+        We Need the above two to get densities(see line 147)
+
+        Note: if running one time step: may be ok to give obs as [densities, vel] (then pretend q_init = densities)
+            if running more than one step (ie a simulation):  keep q_init static(from time=0) then update consecutive steps with self.q and self.x
+
+        Note: its quite hard to accurately obtain q and x from just densities DURING a simulation: we initialize self.x as x0 and let it evolve and use it for our updates.
+        in short, it's hard to reproduce because
+        """
+
+
+        densities, q, x = self.compute_nonlocal(self.q, self.x)
+        velocities = self.vel(densities, self.q_max, self.v_max_new, self.lam)
+
+        return densities, velocities
 
     def update(self):
         """See parent class."""
@@ -64,34 +109,9 @@ class NonLocalModel():
         """See parent class."""
         raise NotImplementedError
 
-class non_local():
-
-    def __init__(self,v_max, l, tfinal, dt, q_init):
-        # parameters for __init__ should include x and q
-        Nx = len(q_init)     # discretization points
-        self.v_max_new = v_max / l
-        x0 = np.linspace(0, 1, Nx)
-        self.dx = np.mean(np.gradient(x0))
-        self.xfine = np.linspace(0, 1, Nx)
-        self.ti = []
-        self.tfinal = tfinal
-        self.dt = dt
-        q_anti = cumtrapz(q_init, x0, initial=0)  # anti deriv
-        self.q = np.gradient(q_anti)
-        self.x = x0
-        self.t = 0
-
-        # runs until tfinal ( all I need is current q and current x)
-    def update(self,eta, q_max,lam):
-
-        new_y = self.get_next_terms(eta, q_max,lam)
-        densities = new_y
-        velocities = self.vel(new_y, q_max, self.v_max_new, lam)
-        # return densities and velocities
-
-        return densities, velocities
-
-    def get_next_terms(self, eta, q_max,lam):
+    def compute_nonlocal(self, q, x):
+            self.q = q
+            self.x = x
 
             while self.x[-2] >= 1:
                 self.x = np.delete(self.x, -1)  #init these change
@@ -102,8 +122,8 @@ class non_local():
                 left_point = self.q[-1] / np.diff(self.x[-2:])
                 self.q = np.append(left_point * np.diff(self.x[0:2]), self.q)
 
-            w = self.integrate_nonlocal_term(self.q, self.x, eta)
-            self.x = self.x + self.dt * self.vel(w, q_max, self.v_max_new, lam)
+            w = self.integrate_nonlocal_term(self.q, self.x)
+            self.x = self.x + self.dt * self.vel(w, self.q_max, self.v_max_new, self.lam)
 
             # update boundary conditions here
             while min(np.gradient(self.x)) < 1e-6:
@@ -120,60 +140,20 @@ class non_local():
                     self.q = np.delete(self.q, ind + 1)
 
             old_x = self.x + np.diff(self.x[0:2]) / 2
-            old_y = self.q / np.gradient(self.x)
+            current_density = self.q / np.gradient(self.x)
 
             while old_x[-2] > 1:
                 old_x = np.delete(old_x, -1)
-                old_y = np.delete(old_y, -1)
+                current_density = np.delete(current_density, -1)
 
             new_x = self.xfine
-            set_interp = interp1d(np.append(0, old_x), np.append(old_y[-1], old_y), kind='nearest')
+            set_interp = interp1d(np.append(0, old_x), np.append(current_density[-1], current_density), kind='nearest')
+            new_density = set_interp(new_x)
 
-            new_y = set_interp(new_x)
-            # self.new_y = new_y
-
-            # if self.qfine == []:
-            #     self.qfine = new_y
-            # else:
-            #     self.qfine = np.vstack((self.qfine, new_y))
-
-            self.t += self.dt
-            # self.ti = self.ti + [self.t]
-            print(self.t)
-
-            # if (i > 1) and (np.mod(int(i), 10)) == 0:
-            #     # pass
-            #     plt.figure(1)
-            #     plt.clf()
-            #     plt.plot(self.xfine, new_y)
-            #     plt.xlim((0, 1))
-            #     plt.draw()
-            #     plt.pause(0.1)
-                # Plot densities
-                # plt.figure(1)
-                # plt.clf()
-                # all_densities = qfine
-                # plt.contourf(new_x, np.array(ti), all_densities, levels=900, cmap='jet')
-                # plt.colorbar(shrink=0.8)
-                # plt.ylim((0, tfinal))
-                # plt.xlim((0, 1))
-                # plt.draw()
-                # plt.pause(0.1)
-
-                # Plot velocities
-                # plt.figure(2)
-                # plt.clf()
-                # plt.contourf(new_x, np.array(ti), vel(all_densities), levels=900, cmap='jet')
-                # plt.colorbar(shrink=0.8)
-                # plt.ylim((0, tfinal))
-                # plt.xlim((0, 1))
-                # plt.draw()
-                # plt.pause(0.1)
-
-            return new_y
+            return new_density, self.q, self.x
 
 
-    def integrate_nonlocal_term(self, q, x, eta):
+    def integrate_nonlocal_term(self, q, x):
         x_size = len(x)
         q = np.append(q, q[1:])
 
@@ -189,12 +169,12 @@ class non_local():
         dens = np.append(d1, cc[0:2])
 
         a_t = self.a(x).reshape(len(x), 1)
-        b_t = self.b(x, eta).reshape(len(x), 1)
+        b_t = self.b(x, self.eta).reshape(len(x), 1)
         upbnd = np.maximum(np.minimum(x[1:], b_t), a_t)
         lobnd = np.minimum(np.maximum(x[:-1], a_t), b_t)
 
-        part_a = self.gamma_y(np.matlib.repmat(x.reshape(len(x), 1), 1, len(x) - 1), upbnd, eta)
-        part_b = self.gamma_y(np.matlib.repmat(x.reshape(len(x), 1), 1, len(x) - 1), lobnd, eta)
+        part_a = self.gamma_y(np.matlib.repmat(x.reshape(len(x), 1), 1, len(x) - 1), upbnd, self.eta)
+        part_b = self.gamma_y(np.matlib.repmat(x.reshape(len(x), 1), 1, len(x) - 1), lobnd, self.eta)
         w_1 = np.sum(np.multiply(dens[:-1], part_a - part_b), 1)
 
         return w_1[0:x_size]
@@ -325,33 +305,45 @@ if __name__ == "__main__":
                   0.450000000000000, 0.452500000000000, 0.457500000000000, 0.462500000000000, 0.467500000000000,
                   0.472500000000000, 0.477500000000000, 0.482500000000000, 0.487500000000000])
     lam = 1
+    qfine = []
 
-    # q, _ = non_local(eta, v_max, q_max, l, tfinal, dt, q)
-    mode = non_local(v_max, l, tfinal, dt, q)
+    sess = None
+    ob_space = None
+    ac_space = None
+    replay_buffer =None
+    verbose = None
 
+    mode = NonLocalModel(sess,ob_space,ac_space,replay_buffer, verbose , v_max, l, tfinal, dt, q, eta, q_max, lam)
+    ti = []
+    t = 0
     for i in np.arange(0, (tfinal / dt)):
-        densities, _ = mode.update(eta, q_max, lam)
+
+        densities = q
+        densities, _ = mode.get_next_obs(q)
+        t += dt
+        if qfine == []:
+            qfine = densities
+            ti = np.append(ti,t)
+        else:
+            qfine = np.vstack((qfine, densities))
+            ti = np.append(ti,t)
 
         if (i > 1) and (np.mod(int(i), 10)) == 0:
             # pass
+            # plt.figure(1)
+            # plt.clf()
+            # plt.plot(mode.xfine, densities)
+            # plt.xlim((0, 1))
+            # plt.draw()
+            # plt.pause(0.1)
+
+            # Plot densities
             plt.figure(1)
             plt.clf()
-            plt.plot(mode.xfine, densities)
+            all_densities = qfine
+            plt.contourf(mode.xfine, ti, all_densities, levels=900, cmap='jet')
+            plt.colorbar(shrink=0.8)
+            plt.ylim((0, tfinal))
             plt.xlim((0, 1))
             plt.draw()
             plt.pause(0.1)
-    # for i in np.arange(1000):
-    #
-    #     #get next obs should be something like this
-    #     qfine, _, q, x = non_local(eta, v_max, q_max, l, tfinal, dt, q, x)
-    #
-    #     Nx = len(qfine)
-    #     xfine = np.linspace(0, 1, Nx)
-    #     plt.figure(1)
-    #     plt.clf()
-    #     plt.plot(xfine, qfine)
-    #     plt.xlim((0, 1))
-    #     plt.draw()
-    #     plt.pause(0.1)
-
-        #action items; set up get next obs, set up init --> q_init is only used at first iterations,
