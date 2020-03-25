@@ -3,7 +3,6 @@ import unittest
 from gym.spaces import Box
 import numpy as np
 import tensorflow as tf
-import random
 
 from mbrl_traffic.policies.base import Policy
 from mbrl_traffic.policies import NoOpPolicy
@@ -78,7 +77,7 @@ class TestNoOpPolicy(unittest.TestCase):
         np.random.seed(0)
         np.testing.assert_almost_equal(
             self.policy.get_action([], False, False),
-            [0.195254, 0.8607575]
+            [0.8607575, 0.4110535]
         )
 
         # test value

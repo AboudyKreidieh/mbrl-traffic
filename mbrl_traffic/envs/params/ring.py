@@ -1,5 +1,5 @@
 """Flow-specific parameters for the multi-lane ring scenario."""
-from flow.controllers import IDMController, ContinuousRouter
+from flow.controllers import IDMController, ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
 from flow.core.params import VehicleParams
 from flow.core.params import SumoCarFollowingParams
@@ -9,6 +9,8 @@ from flow.networks.ring import RingNetwork, ADDITIONAL_NET_PARAMS
 
 # Number of vehicles in the network
 NUM_VEHICLES = 50
+# Number of trained/automated vehicles
+NUM_RL_VEHICLES = 5
 # Length of the ring (in meters)
 RING_LENGTH = 1500
 # Number of lanes in the ring
@@ -16,7 +18,7 @@ NUM_LANES = 1
 
 vehicles = VehicleParams()
 vehicles.add(
-    veh_id="idm",
+    veh_id="human",
     acceleration_controller=(IDMController, {
         "a": 0.3,
         "b": 2.0,
@@ -29,7 +31,18 @@ vehicles.add(
     lane_change_params=SumoLaneChangeParams(
         lane_change_mode="strategic",
     ),
-    num_vehicles=NUM_VEHICLES)
+    num_vehicles=NUM_VEHICLES - NUM_RL_VEHICLES)
+vehicles.add(
+    veh_id="rl",
+    acceleration_controller=(RLController, {}),
+    routing_controller=(ContinuousRouter, {}),
+    car_following_params=SumoCarFollowingParams(
+        min_gap=0.5,
+    ),
+    lane_change_params=SumoLaneChangeParams(
+        lane_change_mode=0,  # no lane changes by automated vehicles
+    ),
+    num_vehicles=NUM_RL_VEHICLES)
 
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
 additional_net_params["length"] = RING_LENGTH
@@ -77,5 +90,6 @@ flow_params = dict(
     initial=InitialConfig(
         spacing="random",
         min_gap=0.5,
+        shuffle=True,
     ),
 )

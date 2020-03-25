@@ -3,6 +3,8 @@ import argparse
 import tensorflow as tf
 import gym
 
+from flow.utils.registry import make_create_env
+
 from mbrl_traffic.policies import KShootPolicy
 from mbrl_traffic.policies import SACPolicy
 from mbrl_traffic.policies import NoOpPolicy
@@ -16,6 +18,10 @@ from mbrl_traffic.utils.optimizers import CrossEntropyMethod
 from mbrl_traffic.envs.params.ring import flow_params as ring_params
 from mbrl_traffic.envs.params.merge import flow_params as merge_params
 from mbrl_traffic.envs.params.highway import flow_params as highway_params
+from mbrl_traffic.envs.av import AVOpenEnv
+from mbrl_traffic.envs.av import AVClosedEnv
+from mbrl_traffic.envs.av import OPEN_ENV_PARAMS
+from mbrl_traffic.envs.av import CLOSED_ENV_PARAMS
 
 
 # =========================================================================== #
@@ -486,29 +492,51 @@ def create_env(env, render=False, evaluate=False):
     if env.startswith("av"):
         if env.endswith("ring"):
             flow_params = ring_params.copy()
+            flow_params["env_name"] = AVClosedEnv
+            flow_params["env"].additional_params = CLOSED_ENV_PARAMS.copy()
         elif env.endswith("merge"):
             flow_params = merge_params.copy()
+            flow_params["env_name"] = AVOpenEnv
+            flow_params["env"].additional_params = OPEN_ENV_PARAMS.copy()
         elif env.endswith("highway"):
             flow_params = highway_params.copy()
+            flow_params["env_name"] = AVOpenEnv
+            flow_params["env"].additional_params = OPEN_ENV_PARAMS.copy()
         else:
             raise ValueError("Unknown environment type: {}".format(env))
 
-        flow_params["env"] = None  # FIXME
-        env = None  # FIXME
+        # Add the render and evaluation flags.
+        flow_params["sim"].render = render
+        flow_params["env"].evaluate = evaluate
+
+        # Create the environment.
+        env_creator, _ = make_create_env(flow_params)
+        env = env_creator()
 
     # Variable speed limit environments
     elif env.startswith("vsl"):
         if env.endswith("ring"):
             flow_params = ring_params.copy()
+            flow_params["env_name"] = None  # FIXME
+            flow_params["env"].additional_params = None  # FIXME
         elif env.endswith("merge"):
             flow_params = merge_params.copy()
+            flow_params["env_name"] = None  # FIXME
+            flow_params["env"].additional_params = None  # FIXME
         elif env.endswith("highway"):
             flow_params = highway_params.copy()
+            flow_params["env_name"] = None  # FIXME
+            flow_params["env"].additional_params = None  # FIXME
         else:
             raise ValueError("Unknown environment type: {}".format(env))
 
-        flow_params["env"] = None  # FIXME
-        env = None  # FIXME
+        # Add the render and evaluation flags.
+        flow_params["sim"].render = render
+        flow_params["env"].evaluate = evaluate
+
+        # Create the environment.
+        env_creator, _ = make_create_env(flow_params)
+        env = env_creator()
 
     # MuJoCo and other gym environments
     elif isinstance(env, str):
