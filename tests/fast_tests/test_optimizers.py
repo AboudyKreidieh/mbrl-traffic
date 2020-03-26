@@ -4,7 +4,7 @@ import unittest
 from mbrl_traffic.utils.optimizers.base import Optimizer
 from mbrl_traffic.utils.optimizers import NelderMead
 # from mbrl_traffic.utils.optimizers import GeneticAlgorithm
-# from mbrl_traffic.utils.optimizers import CrossEntropyMethod
+from mbrl_traffic.utils.optimizers import CrossEntropyMethod
 
 
 class TestOptimizer(unittest.TestCase):
@@ -103,12 +103,6 @@ class TestGeneticAlgorithm(unittest.TestCase):
         # check the attributes
         del optimizer  # TODO
 
-        # initialize the optimizer with specified optional parameters
-        optimizer = None  # TODO
-
-        # check the attributes
-        del optimizer  # TODO
-
     def test_solve(self):
         """Checks the solve method for a 1-D problem.
 
@@ -171,21 +165,25 @@ class TestCrossEntropyMethod(unittest.TestCase):  # TODO
         2. Problem: num_vehicles=22, length=260
            Expected solution: 5.13977943
         """
-        optimizer = None  # TODO
+        optimizer = CrossEntropyMethod(
+            param_low=[0.1],
+            param_high=[5.],
+            fitness_fn=None,
+        )
 
-        # test case 1  TODO
-        # def fitness_fn(x):
-        #     return v_eq_max_function(x, 22, 230)
-        # optimizer.fitness_fn = fitness_fn
-        # sol, err = optimizer.solve()
-        # self.assertAlmostEqual(sol[0], 3.71361481)
+        # test case 1
+        def fitness_fn(x):
+            return v_eq_max_function(x, 22, 230)
+        optimizer.fitness_fn = fitness_fn
+        sol, err = optimizer.solve(num_steps=10000)
+        self.assertAlmostEqual(sol[0], 3.71361481)
 
-        # test case 2  TODO
-        # def fitness_fn(x):
-        #     return v_eq_max_function(x, 22, 260)
-        # optimizer.fitness_fn = fitness_fn
-        # sol, err = optimizer.solve()
-        # self.assertAlmostEqual(sol[0], 5.13977943)
+        # test case 2
+        def fitness_fn(x):
+            return v_eq_max_function(x, 22, 260)
+        optimizer.fitness_fn = fitness_fn
+        sol, err = optimizer.solve()
+        self.assertAlmostEqual(sol[0], 5.13977943)
 
 
 def v_eq_max_function(v, *args):
