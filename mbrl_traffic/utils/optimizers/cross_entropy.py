@@ -180,22 +180,3 @@ class CrossEntropyMethod(Optimizer):
     def _sort_sample(self, s):
         """Sort data by function return."""
         return sorted(s, key=lambda x: x[1], reverse=self.reverse)
-
-
-def sqr(x):
-    # solution x = 2 and y(x) = 3
-    return (x-2) ** 2 + 3
-
-
-def loss_func(x_pred, guess=0):
-    if len(x_pred) > 1:
-        x_pred = x_pred[0]
-    return np.sqrt((sqr(x_pred) - sqr(guess))**2)
-
-
-bds_low = [0, 5]
-bds_high = [5, 7]
-op = CrossEntropyMethod(bds_low, bds_high, loss_func)
-solution = op.solve(num_steps=50000)
-
-print(solution)

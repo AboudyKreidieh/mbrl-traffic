@@ -175,7 +175,7 @@ class TestCrossEntropyMethod(unittest.TestCase):  # TODO
         def fitness_fn(x):
             return v_eq_max_function(x, 22, 230)
         optimizer.fitness_fn = fitness_fn
-        sol, err = optimizer.solve(num_steps=10000)
+        sol, err = optimizer.solve()
         self.assertAlmostEqual(sol[0], 3.71361481)
 
         # test case 2
