@@ -161,6 +161,11 @@ SAC_POLICY_PARAMS = dict(
 def parse_params(args):
     """Parse training options user can specify in command line.
 
+    Parameters
+    ----------
+    args : list of str
+        command-line arguments
+
     Returns
     -------
     argparse.Namespace
@@ -403,7 +408,7 @@ def parse_model_params(parser):
     # parameters for ARZModel
     parser.add_argument(
         '--tau_arz',
-        type=str, default=ARZ_MODEL_PARAMS["tau"],
+        type=float, default=ARZ_MODEL_PARAMS["tau"],
         help='time needed to adjust the velocity of a vehicle from its '
              'current value to the equilibrium speed (in sec). Used as an '
              'input parameter to the ARZModel object.')
