@@ -198,6 +198,26 @@ def plot_heatmap(times, obses, save_path, postfix="", svg=False):
     plt.close()
 
 
+def plot_fundamental_diagram(times, obses, save_path, postfix="", svg=False):
+    """Generate fundamental diagram plots.
+
+    Parameters
+    ----------
+    times : array_like
+        an array of the time associated with each observation
+    obses : array_like
+        a matrix of speeds and observations for every time step
+    save_path : str
+        the path were the results should be logged to
+    postfix : str
+        a postfix to the name of the file to be saved
+    svg : bool
+        whether to generate the heatmaps as svg files. If set to False, they
+        are generated as png files.
+    """
+    pass  # TODO
+
+
 def generate_videos(times, obses, save_path, postfix=""):
     """Generate videos of the evolution of average speeds and densities.
 
@@ -350,6 +370,10 @@ def main(args):
             generate_videos(
                 times, obses, save_path, postfix="{}".format(i))
 
+            # Generate fundamental diagram plots.
+            plot_fundamental_diagram(
+                times, obses, save_path, "{}".format(i), flags.svg)
+
     else:
         # Get the model type and its parameters from the hyperparameters.json
         # file.
@@ -409,12 +433,16 @@ def main(args):
                     header=",".join(header))
 
                 # Generate the heatmaps of the speeds, flows, and densities.
-                plot_heatmap(times, obses, save_path,
-                             postfix="{}_{}".format(i, j), svg=flags.svg)
+                plot_heatmap(
+                    times, obses, save_path, "{}_{}".format(i, j), flags.svg)
 
                 # Generate the videos of the speeds and densities.
-                generate_videos(times, obses, save_path,
-                                postfix="{}_{}".format(i, j))
+                generate_videos(
+                    times, obses, save_path, "{}_{}".format(i, j))
+
+                # Generate fundamental diagram plots.
+                plot_fundamental_diagram(
+                    times, obses, save_path, "{}_{}".format(i, j), flags.svg)
 
 
 if __name__ == "__main__":
