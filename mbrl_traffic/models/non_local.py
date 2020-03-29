@@ -16,14 +16,19 @@ class NonLocalModel():
                  ac_space,
                  replay_buffer,
                  verbose,
+                 dt,
+                 rho_max,
+                 rho_max_max,
                  v_max,
+                 v_max_max,
+                 stream_model,
+                 lam,
                  l,
                  tfinal,
-                 dt,
                  q_init,
-                 eta,
-                 q_max,
-                 lam):
+                 eta,):
+
+
         """Instantiate the non-local model object.
 
         Parameters
@@ -40,6 +45,28 @@ class NonLocalModel():
         verbose : int
             the verbosity level: 0 none, 1 training information, 2 tensorflow
             debug
+        dt : float
+            time discretization (in seconds/step)
+        rho_max : float
+            maximum density term in the LWR model (in veh/m)
+        rho_max_max : float
+            maximum possible density of the network (in veh/m)
+        v_max : float
+            initial speed limit of the LWR model. If not actions are provided
+            during the simulation procedure, this value is kept constant
+            throughout the simulation
+        v_max_max : float
+            max speed limit that the network can be assigned
+        stream_model : str
+            the name of the macroscopic stream model used to denote
+            relationships between the current speed and density. Must be one of
+            {"greenshield"}
+        lam : float
+            exponent of the Green-shield velocity function
+        l : TODO
+        tfinal : TODO
+        q_init : TODO
+        eta : TODO
         """
         super(NonLocalModel, self).__init__(
             sess=sess,
@@ -49,43 +76,53 @@ class NonLocalModel():
             verbose=verbose,
         )
 
-        Nx = len(q_init)  # discretization points
+        # discretization points
+        Nx = len(q_init)
         self.v_max_new = v_max / l
-        x0 = np.linspace(0, 1, Nx)
-        self.dx = np.mean(np.gradient(x0))
+        self.v_max_max_new = v_max_max / l
+        self.x0 = np.linspace(0, 1, Nx)
+        self.dx = np.mean(np.gradient(self.x0))
         self.xfine = np.linspace(0, 1, Nx)
         self.ti = []
         self.tfinal = tfinal
         self.dt = dt
-        q_anti = cumtrapz(q_init, x0, initial=0)  # anti deriv of initial density
-        self.q = np.gradient(q_anti) # gradient of anti deriv
-        self.x = x0
+        self.q_init = q_init
+
+        # anti derivative of initial density
+        self.q_anti = cumtrapz(self.q_init, self.x0, initial=0)
+        # anti derivative of initial density
+        self.q = np.gradient(self.q_anti)
+
+        self.x = self.x0
         self.t = 0
         self.eta = eta
-        self.q_max = q_max
+        self.rho_max = rho_max
         self.lam = lam
+        self.rho_max_max = rho_max_max
 
     def initialize(self):
         """See parent class."""
         raise NotImplementedError
 
-    def get_next_obs(self, obs, action=None):
-        """TODO: Confirm with Aboudy
-        # q is the gradient of the anti-derivative of the density: see __init__
-            q dictactes how density is updated
-        # x is the variable road spacing which dictates how q is updated (line 123)
-        We Need the above two to get densities(see line 147)
+    def reset(self):
+        """ Reset q and x
 
-        Note: if running one time step: may be ok to give obs as [densities, vel] (then pretend q_init = densities)
-            if running more than one step (ie a simulation):  keep q_init static(from time=0) then update consecutive steps with self.q and self.x
+            Returns
+            -------
+            array_like
+                the initial observation of the space
+            """
+        self.x = self.x0
+        # anti derivative of initial density
+        self.q = np.gradient(self.q_anti)  # gradient of anti deriv
 
-        Note: its quite hard to accurately obtain q and x from just densities DURING a simulation: we initialize self.x as x0 and let it evolve and use it for our updates.
-        in short, it's hard to reproduce because
-        """
+        return self.q, self.x
 
+    def get_next_obs(self, action=None):
+        """ See parent class"""
 
-        densities, q, x = self.compute_nonlocal(self.q, self.x)
-        velocities = self.vel(densities, self.q_max, self.v_max_new, self.lam)
+        densities = self.compute_nonlocal()
+        velocities = self.vel(densities, self.rho_max, self.v_max_new, self.lam)
 
         return densities, velocities
 
@@ -109,51 +146,70 @@ class NonLocalModel():
         """See parent class."""
         raise NotImplementedError
 
-    def compute_nonlocal(self, q, x):
-            self.q = q
-            self.x = x
+    def compute_nonlocal(self):
+        """TODO: explain nonlocal term: Confirm with Alex K.
 
-            while self.x[-2] >= 1:
-                self.x = np.delete(self.x, -1)  #init these change
-                self.q = np.delete(self.q, -1)  #init these change
+        NonLocal Model
+        [Explain here: and citations]
 
-            while self.x[0] >= self.dx:
-                self.x = np.append(self.x[0] - self.dx, self.x)
-                left_point = self.q[-1] / np.diff(self.x[-2:])
-                self.q = np.append(left_point * np.diff(self.x[0:2]), self.q)
+       Returns
+        -------
+        array_like
+              next density TODO
+        """
+        while self.x[-2] >= 1:
+            self.x = np.delete(self.x, -1)
+            self.q = np.delete(self.q, -1)
 
-            w = self.integrate_nonlocal_term(self.q, self.x)
-            self.x = self.x + self.dt * self.vel(w, self.q_max, self.v_max_new, self.lam)
+        while self.x[0] >= self.dx:
+            self.x = np.append(self.x[0] - self.dx, self.x)
+            left_point = self.q[-1] / np.diff(self.x[-2:])
+            self.q = np.append(left_point * np.diff(self.x[0:2]), self.q)
 
-            # update boundary conditions here
-            while min(np.gradient(self.x)) < 1e-6:
-                ind = np.argmin(np.gradient(self.x))  # find index
-                if ind > 1:
-                    mq = self.q[ind - 1] + self.q[ind]
-                    self.x = np.delete(self.x, ind)
-                    self.q[ind - 1] = mq
-                    self.q = np.delete(self.q, ind)
-                else:
-                    mq = self.q[ind + 1] + self.q[ind]
-                    self.x = np.delete(self.x, ind + 1)
-                    self.q[ind] = mq
-                    self.q = np.delete(self.q, ind + 1)
+        w = self.integrate_nonlocal_term(self.q, self.x)
+        self.x = self.x + self.dt * self.vel(w, self.rho_max, self.v_max_new, self.lam)
 
-            old_x = self.x + np.diff(self.x[0:2]) / 2
-            current_density = self.q / np.gradient(self.x)
+        # update boundary conditions here
+        while min(np.gradient(self.x)) < 1e-6:
+            ind = np.argmin(np.gradient(self.x))  # find index
+            if ind > 1:
+                mq = self.q[ind - 1] + self.q[ind]
+                self.x = np.delete(self.x, ind)
+                self.q[ind - 1] = mq
+                self.q = np.delete(self.q, ind)
+            else:
+                mq = self.q[ind + 1] + self.q[ind]
+                self.x = np.delete(self.x, ind + 1)
+                self.q[ind] = mq
+                self.q = np.delete(self.q, ind + 1)
 
-            while old_x[-2] > 1:
-                old_x = np.delete(old_x, -1)
-                current_density = np.delete(current_density, -1)
+        old_x = self.x + np.diff(self.x[0:2]) / 2
+        current_density = self.q / np.gradient(self.x)
 
-            new_x = self.xfine
-            set_interp = interp1d(np.append(0, old_x), np.append(current_density[-1], current_density), kind='nearest')
-            new_density = set_interp(new_x)
+        while old_x[-2] > 1:
+            old_x = np.delete(old_x, -1)
+            current_density = np.delete(current_density, -1)
 
-            return new_density, self.q, self.x
+        new_x = self.xfine
+        set_interp = interp1d(np.append(0, old_x), np.append(current_density[-1], current_density), kind='nearest')
+        new_density = set_interp(new_x)
 
+        return new_density
 
     def integrate_nonlocal_term(self, q, x):
+        """TODO: explain nonlocal term: Confirm with Alex K.
+        Integrate NonLocal Term
+
+        Parameters
+        ----------
+        See Parent class
+
+        Returns
+        -------
+        array_like
+            Non-local terms at every point in the road
+        """
+
         x_size = len(x)
         q = np.append(q, q[1:])
 
@@ -179,31 +235,82 @@ class NonLocalModel():
 
         return w_1[0:x_size]
 
-    # nonlocal impact
     def a(self,x):
+        """TODO: upper bound
+        Parameters
+        ----------
+        x : See parent class
+
+       Returns
+        -------
+        array_like
+            TODO"""
+
         return np.minimum(x, 1)
 
     def b(self, x, eta):
+        """TODO: lower bound
+
+        Parameters
+        ----------
+        x : See parent class
+        eta : See parent class
+
+       Returns
+        -------
+        array_like
+            TODO """
         return x + eta
 
     def gamma_y(self, x, y, eta):
+        """TODO: Confirm with Alex K
+
+        Parameters
+        ----------
+        y : TODO
+        x : See parent class
+        eta: See parent class
+
+       Returns
+        -------
+        array_like
+            TODO"""
+
         return (2 * (y - x) - (y - x) ** 2 / eta) / eta
 
-    # velocity function
-    def vel(sel, w, q_max,v_max_new,lam):
-       return v_max_new * (1 - w / q_max) ** lam
+    def vel(self, w, rho_max, v_max_new, lam):
+        """Implement the Greenshields model for the equilibrium velocity.
+
+               Greenshields, B. D., Ws Channing, and Hh Miller. "A study of traffic
+               capacity." Highway research board proceedings. Vol. 1935. National
+               Research Council (USA), Highway Research Board, 1935.
+
+        Parameters
+        ----------
+        w: See parent class
+        rho_max: See parent class
+        v_max_new: See parent class
+        lam: See parent class
+
+        Returns
+        -------
+        array_like
+            velocity at every specified point on road
+        """
+
+        return v_max_new * (1 - w / rho_max) ** lam
 
 
 if __name__ == "__main__":
     tn = 1001
-    tfinal = 10
+    tfinal = 20
     # dt = tfinal / tn
     dt = 0.1
     eta = 0.01
-    q_max = 1
+    rho_max = 1
     v_max = 11
     l = 260
-    q = np.array([0.536000000000000,
+    q_init = np.array([0.536000000000000,
                   0.541000000000000, 0.546000000000000, 0.551000000000000, 0.555000000000000, 0.555000000000000,
                   0.555000000000000, 0.555000000000001, 0.554999999999999, 0.555000000000000, 0.555000000000000,
                   0.555000000000000, 0.555000000000001, 0.554999999999999, 0.555000000000000, 0.555000000000000,
@@ -310,26 +417,50 @@ if __name__ == "__main__":
     sess = None
     ob_space = None
     ac_space = None
-    replay_buffer =None
+    replay_buffer = None
     verbose = None
+    rho_max_max = 1
+    v_max_max = 100
+    stream_model = None
 
-    mode = NonLocalModel(sess,ob_space,ac_space,replay_buffer, verbose , v_max, l, tfinal, dt, q, eta, q_max, lam)
+    mode = NonLocalModel(sess,
+                 ob_space,
+                 ac_space,
+                 replay_buffer,
+                 verbose,
+                 dt,
+                 rho_max,
+                 rho_max_max,
+                 v_max,
+                 v_max_max,
+                 stream_model,
+                 lam,
+                 l,
+                 tfinal,
+                 q_init,
+                 eta)
     ti = []
     t = 0
     for i in np.arange(0, (tfinal / dt)):
 
-        densities = q
-        densities, _ = mode.get_next_obs(q)
+        densities, _ = mode.get_next_obs()
+
+        # reset initial conditions
+        mode.reset()
+        # update eta
+        mode.eta = mode.eta - (mode.eta/2)
+
         t += dt
-        if qfine == []:
+        if len(qfine) == 0:
             qfine = densities
-            ti = np.append(ti,t)
+            ti = np.append(ti, t)
         else:
             qfine = np.vstack((qfine, densities))
-            ti = np.append(ti,t)
+            ti = np.append(ti, t)
 
         if (i > 1) and (np.mod(int(i), 10)) == 0:
             # pass
+            # 2d density Plot
             # plt.figure(1)
             # plt.clf()
             # plt.plot(mode.xfine, densities)
@@ -337,7 +468,7 @@ if __name__ == "__main__":
             # plt.draw()
             # plt.pause(0.1)
 
-            # Plot densities
+            # Plot densities surface plot
             plt.figure(1)
             plt.clf()
             all_densities = qfine
