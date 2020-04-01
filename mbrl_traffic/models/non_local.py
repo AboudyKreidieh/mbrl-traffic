@@ -10,6 +10,14 @@ from scipy.integrate import cumtrapz
 class NonLocalModel():
     """Non-local model object."""
 
+    """Keimer, Alexander, Lukas Pflug, and Michele Spinola. 
+    "Nonlocal scalar conservation laws on bounded domains and applications in traffic flow." 
+    SIAM Journal on Mathematical Analysis 50.6 (2018): 6271-6306.
+    
+    Keimer, Alexander, and Lukas Pflug. "Existence, uniqueness and regularity 
+    results on nonlocal balance laws." Journal of Differential Equations 263.7 
+    (2017): 4023-4069."""
+
     def __init__(self,
                  sess,
                  ob_space,
@@ -63,10 +71,14 @@ class NonLocalModel():
             {"greenshield"}
         lam : float
             exponent of the Green-shield velocity function
-        l : TODO
-        tfinal : TODO
-        q_init : TODO
-        eta : TODO
+        l : float
+            length of raod
+        tfinal : float
+            time horizon (in seconds)
+        q_init : array_like
+            Initial Densities
+        eta : float
+            looking-ahead parameter
         """
         super(NonLocalModel, self).__init__(
             sess=sess,
@@ -90,7 +102,7 @@ class NonLocalModel():
 
         # anti derivative of initial density
         self.q_anti = cumtrapz(self.q_init, self.x0, initial=0)
-        # anti derivative of initial density
+        # finite differences of the anti derivative
         self.q = np.gradient(self.q_anti)
 
         self.x = self.x0
@@ -113,8 +125,8 @@ class NonLocalModel():
                 the initial observation of the space
             """
         self.x = self.x0
-        # anti derivative of initial density
-        self.q = np.gradient(self.q_anti)  # gradient of anti deriv
+        # finite differences of the anti derivative
+        self.q = np.gradient(self.q_anti)
 
         return self.q, self.x
 
@@ -147,15 +159,13 @@ class NonLocalModel():
         raise NotImplementedError
 
     def compute_nonlocal(self):
-        """TODO: explain nonlocal term: Confirm with Alex K.
 
-        NonLocal Model
-        [Explain here: and citations]
+        """Compute next density values
 
        Returns
         -------
         array_like
-              next density TODO
+              next density values
         """
         while self.x[-2] >= 1:
             self.x = np.delete(self.x, -1)
@@ -197,8 +207,7 @@ class NonLocalModel():
         return new_density
 
     def integrate_nonlocal_term(self, q, x):
-        """TODO: explain nonlocal term: Confirm with Alex K.
-        Integrate NonLocal Term
+        """Numerical Integration of Non-local Term
 
         Parameters
         ----------
@@ -236,7 +245,8 @@ class NonLocalModel():
         return w_1[0:x_size]
 
     def a(self,x):
-        """TODO: upper bound
+        """Finding the lower bound of the area of of integration
+
         Parameters
         ----------
         x : See parent class
@@ -244,12 +254,13 @@ class NonLocalModel():
        Returns
         -------
         array_like
-            TODO"""
+            lower bound of the area of of integration"""
 
         return np.minimum(x, 1)
 
     def b(self, x, eta):
-        """TODO: lower bound
+        """Finding the lower bound of the area of of integration.\
+            We include eta for the look ahead parameter
 
         Parameters
         ----------
@@ -259,22 +270,23 @@ class NonLocalModel():
        Returns
         -------
         array_like
-            TODO """
+            lower bound of the area of of integration """
+
         return x + eta
 
     def gamma_y(self, x, y, eta):
-        """TODO: Confirm with Alex K
+        """ Weight of the non local term
 
         Parameters
         ----------
-        y : TODO
+        y : bound (either upper or lower)
         x : See parent class
         eta: See parent class
 
        Returns
         -------
         array_like
-            TODO"""
+            Weight of the non local term"""
 
         return (2 * (y - x) - (y - x) ** 2 / eta) / eta
 
