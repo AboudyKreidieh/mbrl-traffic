@@ -8,15 +8,17 @@ from scipy.integrate import cumtrapz
 
 
 class NonLocalModel():
-    """Non-local model object."""
+    """Non-local model object
 
-    """Keimer, Alexander, Lukas Pflug, and Michele Spinola. 
+    Keimer, Alexander, Lukas Pflug, and Michele Spinola.
     "Nonlocal scalar conservation laws on bounded domains and applications in traffic flow." 
     SIAM Journal on Mathematical Analysis 50.6 (2018): 6271-6306.
     
     Keimer, Alexander, and Lukas Pflug. "Existence, uniqueness and regularity 
     results on nonlocal balance laws." Journal of Differential Equations 263.7 
-    (2017): 4023-4069."""
+    (2017): 4023-4069.
+
+    """
 
     def __init__(self,
                  sess,
@@ -34,7 +36,9 @@ class NonLocalModel():
                  l,
                  tfinal,
                  q_init,
-                 eta,):
+                 eta,
+                 optimizer_cls,
+                 optimizer_params):
 
 
         """Instantiate the non-local model object.
@@ -79,6 +83,10 @@ class NonLocalModel():
             Initial Densities
         eta : float
             looking-ahead parameter
+        optimizer_cls : type [ mbrl_traffic.utils.optimizers.base.Optimizer ]
+            the optimizer class to use when training the model parameters
+        optimizer_params : dict
+            optimizer-specific parameters
         """
         super(NonLocalModel, self).__init__(
             sess=sess,
@@ -112,6 +120,18 @@ class NonLocalModel():
         self.lam = lam
         self.rho_max_max = rho_max_max
 
+        # Create the optimizer object.
+        self.optimizer = optimizer_cls(
+            param_low=None,  # FIXME
+            param_high=None,  # FIXME
+            fitness_fn=None,  # FIXME
+            verbose=verbose,
+            **optimizer_params
+        )
+
+        # critical density defined by the Green-shield Model
+        self.rho_crit = self.rho_max / 2
+
     def initialize(self):
         """See parent class."""
         raise NotImplementedError
@@ -144,7 +164,11 @@ class NonLocalModel():
 
     def compute_loss(self, states, actions, next_states):
         """See parent class."""
-        raise NotImplementedError
+        # Compute the predicted next states.
+        # expected_next_states = self.get_next_obs(states, actions)
+
+        # Compute the loss.
+        return None  # FIXME
 
     def get_td_map(self):
         """See parent class."""
