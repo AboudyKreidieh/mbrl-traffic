@@ -96,7 +96,7 @@ class Policy:
 
         Returns
         -------
-        array_like
+        tuple < float >
             computed value by the critic
         """
         raise NotImplementedError
@@ -106,10 +106,12 @@ class Policy:
 
         Returns
         -------
-        (float, float, float)
-            Q1 loss, Q2 loss, value loss
-        (float, float)
-            alpha loss, actor loss
+        float
+            actor loss
+        tuple < float >
+            critic loss
+        dict
+            additional losses
         """
         raise NotImplementedError
 

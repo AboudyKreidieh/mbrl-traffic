@@ -60,7 +60,7 @@ class KShootPolicy(Policy):
 
         No updates are performed by this policy.
         """
-        return (0, 0, 0), 0
+        return 0, (0,), {}
 
     def get_action(self, obs, apply_noise, random_actions):
         """Call the actor methods to compute policy actions.
@@ -96,19 +96,25 @@ class KShootPolicy(Policy):
 
         Returns
         -------
-        array_like
+        tuple < float >
             computed value by the critic
         """
-        raise NotImplementedError
+        return 0,
 
     def get_td_map(self):
         """Return dict map for the summary (to be run in the algorithm)."""
         raise NotImplementedError
 
     def save(self, save_path):
-        """See parent class."""
-        raise NotImplementedError
+        """See parent class.
+
+        There are no policy parameters to save under this case.
+        """
+        pass
 
     def load(self, load_path):
-        """See parent class."""
-        raise NotImplementedError
+        """See parent class.
+
+        There are no policy parameters to load under this case.
+        """
+        pass
