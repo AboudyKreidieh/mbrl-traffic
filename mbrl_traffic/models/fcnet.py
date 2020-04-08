@@ -258,7 +258,7 @@ class FeedForwardModel(Model):
             feed_dict={
                 **{obs_ph: obs for obs_ph in self.obs_ph},
                 **{action_ph: action for action_ph in self.action_ph}
-                       }
+            }
         )
 
         # Average all deltas together.
@@ -272,7 +272,7 @@ class FeedForwardModel(Model):
         delta_obs = avg_means + tf.random.normal(tf.shape(avg_means)) * avg_stds  # TODO yf sample from the dist or just get the average value?
 
         # Return the expected next step observations.
-        next_states_preds = obs + delta_obs  #TODO not sure if we will need this
+        next_states_preds = obs + delta_obs  # TODO not sure if we will need this
 
         return next_states_preds, avg_means, avg_stds
 
@@ -307,7 +307,6 @@ class FeedForwardModel(Model):
         """See parent class."""
         tfd = tfp.distributions
         dist = tfd.MultivariateNormalDiag(loc=mean, scale_diag=std)
-
         rho_logp = dist.log_prob(y_true)
 
         # Create the model loss.
@@ -322,13 +321,16 @@ class FeedForwardModel(Model):
 
     def compute_loss(self, states, actions, next_states):
         """See parent class."""
-        # Compute mean and std of the average Normal distribution
-        _, avg_means, avg_stds = self.get_next_obs(states, actions)
+        # Compute prediction mean and std of the average Normal distribution
+        _, avg_means, avg_logstds = self.get_next_obs(states, actions)
 
         # compute the change in state between two time-steps.
         delta = next_states - states
 
-        return self.log_loss(delta, avg_means, avg_stds)
+        # compute log loss
+        model_loss = self.log_loss(delta, avg_means, tf.exp(avg_logstds))
+
+        return model_loss
 
     def get_td_map(self):
         """See parent class."""
