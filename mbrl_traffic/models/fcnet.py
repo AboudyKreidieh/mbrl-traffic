@@ -321,7 +321,7 @@ class FeedForwardModel(Model):
 
     def compute_loss(self, states, actions, next_states):
         """See parent class."""
-        # Compute prediction mean and std of the average Normal distribution
+        # Compute prediction mean and logstd
         _, avg_means, avg_logstds = self.get_next_obs(states, actions)
 
         # compute the change in state between two time-steps.
