@@ -255,7 +255,10 @@ class FeedForwardModel(Model):
         # Collect the expected delta observation from each model.
         delta_obs, means, logstds = self.sess.run(
             [self.model, self.model_means, self.model_logstds],
-            feed_dict={obs_ph: obs for obs_ph in self.obs_ph}
+            feed_dict={
+                **{obs_ph: obs for obs_ph in self.obs_ph},
+                **{action_ph: action for action_ph in self.action_ph}
+                       }
         )
 
         # Average all deltas together.
