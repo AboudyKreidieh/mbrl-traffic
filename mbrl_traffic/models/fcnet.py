@@ -326,7 +326,6 @@ class FeedForwardModel(Model):
 
         # compute the change in state between two time-steps.
         delta = next_states - states
-
         # compute log loss
         model_loss = self.log_loss(delta, avg_means, tf.exp(avg_logstds))
 
@@ -339,11 +338,13 @@ class FeedForwardModel(Model):
     def save(self, save_path):
         """See parent class."""
         for i in range(self.num_ensembles):
-            file_path = save_path + 'model_{}'.format(i)
-            self.policy_saver[i].save(self.sess, file_path)
+            self.policy_saver[i].save(
+                self.sess,
+                "{}/model_{}_trained_variables.ckpt".format(save_path, i))
 
     def load(self, load_path):
         """See parent class."""
         for i in range(self.num_ensembles):
-            file_path = load_path + 'model_{}'.format(i)
-            self.policy_saver[i].restore(self.sess, file_path)
+            self.policy_saver[i].restore(
+                self.sess,
+                "{}/model_{}_trained_variables.ckpt".format(load_path, i))
