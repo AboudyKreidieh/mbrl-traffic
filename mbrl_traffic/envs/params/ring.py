@@ -1,4 +1,6 @@
 """Flow-specific parameters for the multi-lane ring scenario."""
+from copy import deepcopy
+
 from flow.controllers import IDMController, ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
 from flow.core.params import VehicleParams
@@ -44,7 +46,7 @@ vehicles.add(
     ),
     num_vehicles=NUM_RL_VEHICLES)
 
-additional_net_params = ADDITIONAL_NET_PARAMS.copy()
+additional_net_params = deepcopy(ADDITIONAL_NET_PARAMS)
 additional_net_params["length"] = RING_LENGTH
 additional_net_params["lanes"] = NUM_LANES
 
@@ -71,8 +73,10 @@ flow_params = dict(
 
     # environment related parameters (see flow.core.params.EnvParams)
     env=EnvParams(
-        horizon=7200,
-        additional_params=ADDITIONAL_ENV_PARAMS,
+        horizon=1800,
+        warmup_steps=50,
+        sims_per_step=2,
+        additional_params=deepcopy(ADDITIONAL_ENV_PARAMS),
     ),
 
     # network-related parameters (see flow.core.params.NetParams and the

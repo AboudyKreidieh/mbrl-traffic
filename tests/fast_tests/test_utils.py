@@ -7,9 +7,9 @@ from mbrl_traffic.utils.replay_buffer import ReplayBuffer
 from mbrl_traffic.utils.tf_util import gaussian_likelihood
 from mbrl_traffic.utils.train import create_env
 from mbrl_traffic.utils.train import parse_params
-from mbrl_traffic.utils.train import get_algorithm_params_from_args
-from mbrl_traffic.utils.train import get_policy_params_from_args
-from mbrl_traffic.utils.train import get_model_params_from_args
+# from mbrl_traffic.utils.train import get_algorithm_params_from_args
+# from mbrl_traffic.utils.train import get_policy_params_from_args
+# from mbrl_traffic.utils.train import get_model_params_from_args
 
 
 class TestReplayBuffer(unittest.TestCase):

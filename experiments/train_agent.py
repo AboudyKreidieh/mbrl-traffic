@@ -8,6 +8,7 @@ import os
 import json
 from time import strftime
 import sys
+from copy import deepcopy
 
 from mbrl_traffic.algorithm import ModelBasedRLAlgorithm
 from mbrl_traffic.utils.misc import ensure_dir
@@ -123,9 +124,9 @@ def main(args):
             'policy': "{}".format(policy.__name__),
             'model': "{}".format(model.__name__),
             'date/time': now,
-            'alg_params': alg_params.copy(),
-            'policy_params': policy_params.copy(),
-            'model_params': model_params.copy(),
+            'alg_params': deepcopy(alg_params),
+            'policy_params': deepcopy(policy_params),
+            'model_params': deepcopy(model_params),
         }
 
         # To deal with functions in the parameters to log.

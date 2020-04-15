@@ -1,5 +1,6 @@
 """Example of vehicles in a section of the I-210."""
 import os
+from copy import deepcopy
 
 import flow.config as config
 from flow.envs.multiagent.i210 import I210MultiEnv
@@ -41,8 +42,8 @@ inflow.add(  # main highway
     veh_type="human",
     edge="119257914",
     vehs_per_hour=8378,
-    departLane="random",
-    departSpeed=23
+    depart_lane="random",
+    depart_speed=23
 )
 
 
@@ -69,7 +70,7 @@ flow_params = dict(
     # environment related parameters (see flow.core.params.EnvParams)
     env=EnvParams(
         horizon=4500,
-        additional_params=ADDITIONAL_ENV_PARAMS.copy(),
+        additional_params=deepcopy(ADDITIONAL_ENV_PARAMS),
     ),
 
     # network-related parameters (see flow.core.params.NetParams and the

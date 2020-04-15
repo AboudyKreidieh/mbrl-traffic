@@ -2,6 +2,7 @@
 import argparse
 import tensorflow as tf
 import gym
+from copy import deepcopy
 
 from flow.utils.registry import make_create_env
 
@@ -472,7 +473,7 @@ def get_algorithm_params_from_args(args):
     }
 
 
-def create_env(env, render=False, evaluate=False):
+def create_env(env, render=False, evaluate=False, emission_path=None):
     """Return, and potentially create, the environment.
 
     Parameters
@@ -483,6 +484,10 @@ def create_env(env, render=False, evaluate=False):
         whether to render the environment
     evaluate : bool
         specifies whether this is a training or evaluation environment
+    emission_path : str
+        path to the folder in which to create the emissions output for Flow
+        environments. Emissions output is not generated if this value is not
+        specified.
 
     Returns
     -------
@@ -496,23 +501,24 @@ def create_env(env, render=False, evaluate=False):
     # Mixed-autonomy traffic environments
     if env.startswith("av"):
         if env.endswith("ring"):
-            flow_params = ring_params.copy()
+            flow_params = deepcopy(ring_params)
             flow_params["env_name"] = AVClosedEnv
-            flow_params["env"].additional_params = CLOSED_ENV_PARAMS.copy()
+            flow_params["env"].additional_params = deepcopy(CLOSED_ENV_PARAMS)
         elif env.endswith("merge"):
-            flow_params = merge_params.copy()
+            flow_params = deepcopy(merge_params)
             flow_params["env_name"] = AVOpenEnv
-            flow_params["env"].additional_params = OPEN_ENV_PARAMS.copy()
+            flow_params["env"].additional_params = deepcopy(OPEN_ENV_PARAMS)
         elif env.endswith("highway"):
-            flow_params = highway_params.copy()
+            flow_params = deepcopy(highway_params)
             flow_params["env_name"] = AVOpenEnv
-            flow_params["env"].additional_params = OPEN_ENV_PARAMS.copy()
+            flow_params["env"].additional_params = deepcopy(OPEN_ENV_PARAMS)
         else:
             raise ValueError("Unknown environment type: {}".format(env))
 
-        # Add the render and evaluation flags.
+        # Update the render, evaluation, and emission_path attributes.
         flow_params["sim"].render = render
         flow_params["env"].evaluate = evaluate
+        flow_params["sim"].emission_path = emission_path
 
         # Create the environment.
         env_creator, _ = make_create_env(flow_params)
@@ -521,23 +527,24 @@ def create_env(env, render=False, evaluate=False):
     # Variable speed limit environments
     elif env.startswith("vsl"):
         if env.endswith("ring"):
-            flow_params = ring_params.copy()
+            flow_params = deepcopy(ring_params)
             flow_params["env_name"] = None  # FIXME
             flow_params["env"].additional_params = None  # FIXME
         elif env.endswith("merge"):
-            flow_params = merge_params.copy()
+            flow_params = deepcopy(merge_params)
             flow_params["env_name"] = None  # FIXME
             flow_params["env"].additional_params = None  # FIXME
         elif env.endswith("highway"):
-            flow_params = highway_params.copy()
+            flow_params = deepcopy(highway_params)
             flow_params["env_name"] = None  # FIXME
             flow_params["env"].additional_params = None  # FIXME
         else:
             raise ValueError("Unknown environment type: {}".format(env))
 
-        # Add the render and evaluation flags.
+        # Update the render, evaluation, and emission_path attributes.
         flow_params["sim"].render = render
         flow_params["env"].evaluate = evaluate
+        flow_params["sim"].emission_path = emission_path
 
         # Create the environment.
         env_creator, _ = make_create_env(flow_params)

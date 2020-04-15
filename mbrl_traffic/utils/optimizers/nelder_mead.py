@@ -43,7 +43,7 @@ class NelderMead(Optimizer):
         disp : bool
             Set to True to print convergence messages.
         initial_simplex : array_like of shape (N+1, N)
-            Initial simplex. If given, overrides x0. initial_simplex[j,:] 
+            Initial simplex. If given, overrides x0. initial_simplex[j,:]
             should contain the coordinates of the j-th vertex of the N+1
             vertices in the simplex, where N is the dimension.
         xatol : float

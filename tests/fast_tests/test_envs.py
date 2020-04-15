@@ -39,12 +39,14 @@ class TestParams(unittest.TestCase):
                 sim_step=0.5,
             ),
             env=EnvParams(
-                horizon=7200,
+                horizon=1800,
+                sims_per_step=2,
+                warmup_steps=50,
                 additional_params={
                     'max_accel': 3,
                     'max_decel': 3,
-                    'target_velocity': 10,
                     'sort_vehicles': False,
+                    'target_velocity': 10
                 },
             ),
             net=NetParams(
@@ -62,7 +64,8 @@ class TestParams(unittest.TestCase):
             ),
         )
 
-        actual_flow_params = ring_params.copy()
+        actual_flow_params = deepcopy(ring_params)
+        self.maxDiff = None
 
         # check the inflows
         self.assertEqual(actual_flow_params["net"].inflows.__dict__,
@@ -133,7 +136,7 @@ class TestParams(unittest.TestCase):
             ),
         )
 
-        actual_flow_params = merge_params.copy()
+        actual_flow_params = deepcopy(merge_params)
 
         # check the inflows
         self.assertEqual(actual_flow_params["net"].inflows.__dict__,
@@ -185,7 +188,7 @@ class TestAV(unittest.TestCase):
             net_params=flow_params_closed["net"],
         )
         self.env_params_closed = flow_params_closed["env"]
-        self.env_params_closed.additional_params = CLOSED_ENV_PARAMS.copy()
+        self.env_params_closed.additional_params = deepcopy(CLOSED_ENV_PARAMS)
 
         # for AVOpenEnv
         flow_params_open = deepcopy(merge_params)
@@ -196,7 +199,7 @@ class TestAV(unittest.TestCase):
             net_params=flow_params_open["net"],
         )
         self.env_params_open = flow_params_open["env"]
-        self.env_params_open.additional_params = OPEN_ENV_PARAMS.copy()
+        self.env_params_open.additional_params = deepcopy(OPEN_ENV_PARAMS)
 
     def test_base_env(self):
         """Validate the functionality of the AVEnv class.
@@ -392,7 +395,7 @@ def test_additional_params(env_class,
     """
     for key in additional_params.keys():
         # remove one param from the additional_params dict
-        new_add = additional_params.copy()
+        new_add = deepcopy(additional_params)
         del new_add[key]
 
         try:
@@ -412,7 +415,7 @@ def test_additional_params(env_class,
         env_class(
             sim_params=sim_params,
             network=network,
-            env_params=EnvParams(additional_params=additional_params.copy())
+            env_params=EnvParams(additional_params=deepcopy(additional_params))
         )
     except KeyError:
         # if a KeyError is raised, the test has failed, so return False

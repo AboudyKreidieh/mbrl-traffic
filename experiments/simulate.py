@@ -5,6 +5,7 @@ Usage
 """
 import argparse
 import sys
+from copy import deepcopy
 
 from flow.core.experiment import Experiment
 from flow.core.params import AimsunParams
@@ -71,13 +72,13 @@ if __name__ == "__main__":
 
     # Get the flow_params object.
     if env_name == "ring":
-        flow_params = ring_params.copy()
+        flow_params = deepcopy(ring_params)
         flow_params['net'].additional_params['length'] = flags.ring_length
         flow_params['net'].additional_params['lanes'] = flags.ring_lanes
     elif env_name == "merge":
-        flow_params = merge_params.copy()
+        flow_params = deepcopy(merge_params)
     elif env_name == "highway":
-        flow_params = highway_params.copy()
+        flow_params = deepcopy(highway_params)
     else:
         raise ValueError("exp_config must be one of 'ring' or 'highway'")
 
