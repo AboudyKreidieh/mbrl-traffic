@@ -1,6 +1,8 @@
 """Script containing the Nelder Mead optimizer."""
-from mbrl_traffic.utils.optimizers.base import Optimizer
+import numpy as np
 import scipy.optimize as optimize
+
+from mbrl_traffic.utils.optimizers.base import Optimizer
 
 
 class NelderMead(Optimizer):
@@ -20,8 +22,8 @@ class NelderMead(Optimizer):
                  param_low,
                  param_high,
                  fitness_fn,
-                 x0,
                  verbose=2,
+                 x0=None,
                  disp=True,
                  initial_simplex=None,
                  xatol=1e-8,
@@ -40,6 +42,9 @@ class NelderMead(Optimizer):
             parameter
         verbose : int
             the verbosity flag
+        x0 : array_like
+            the initial guess. If not specified, it will be the midway point
+            between the high and low values.
         disp : bool
             Set to True to print convergence messages.
         initial_simplex : array_like of shape (N+1, N)
@@ -63,7 +68,7 @@ class NelderMead(Optimizer):
             verbose=verbose
         )
 
-        self.x0 = x0
+        self.x0 = x0 or 0.5 * (np.asarray(param_low) + np.asarray(param_high))
         self.bnds = (param_low, param_high)
         self.options = {
             'disp': disp,

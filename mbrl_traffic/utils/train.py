@@ -36,20 +36,20 @@ LWR_MODEL_PARAMS = dict(
     # time discretization (in seconds/step)
     dt=0.5,
     # maximum density term in the model (in veh/m)
-    rho_max=None,  # FIXME
+    rho_max=1,
     # maximum possible density of the network (in veh/m)
     rho_max_max=1,
     # initial speed limit of the model. If not actions are provided during the
     # simulation procedure, this value is kept constant throughout the
     # simulation
-    v_max=None,  # FIXME
+    v_max=30,
     # max speed limit that the network can be assigned
     v_max_max=30,
     # the name of the macroscopic stream model used to denote relationships
     # between the current speed and density. Must be one of {"greenshield"}
-    stream_model=None,  # FIXME
+    stream_model="greenshield",
     # exponent of the Green-shield velocity function
-    lam=None,  # FIXME
+    lam=1,
     # conditions at road left and right ends; should either dict or string ie.
     # {'constant_both': ((density, speed),(density, speed))}, constant value of
     # both ends loop, loop edge values as a ring extend_both, extrapolate last
@@ -71,20 +71,22 @@ ARZ_MODEL_PARAMS = dict(
     # time discretization (in seconds/step)
     dt=0.5,
     # maximum density term in the model (in veh/m)
-    rho_max=None,  # FIXME
+    rho_max=1,
     # maximum possible density of the network (in veh/m)
     rho_max_max=1,
     # initial speed limit of the model. If not actions are provided during the
     # simulation procedure, this value is kept constant throughout the
     # simulation
-    v_max=None,  # FIXME
+    v_max=30,
     # max speed limit that the network can be assigned
     v_max_max=30,
     # time needed to adjust the velocity of a vehicle from its current value to
     # the equilibrium speed (in sec)
-    tau=None,  # FIXME
+    tau=9,
+    # max tau value that can be assigned
+    tau_max=25,
     # exponent of the Green-shield velocity function
-    lam=None,  # FIXME
+    lam=1,
     # conditions at road left and right ends; should either dict or string ie.
     # {'constant_both': ((density, speed),(density, speed))}, constant value of
     # both ends loop, loop edge values as a ring extend_both, extrapolate last

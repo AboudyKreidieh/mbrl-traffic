@@ -1,0 +1,12 @@
+{
+    "dx": 1,
+    "dt": 2,
+    "rho_max": 3,
+    "rho_max_max": 4,
+    "v_max": 5,
+    "v_max_max": 6,
+    "tau": 7,
+    "tau_max": 8,
+    "lam": 9,
+    "boundary_conditions": 10
+}

@@ -1,0 +1,11 @@
+{
+    "dx": 1,
+    "dt": 2,
+    "rho_max": 3,
+    "rho_max_max": 4,
+    "v_max": 5,
+    "v_max_max": 6,
+    "stream_model": 7,
+    "lam": 8,
+    "boundary_conditions": 9
+}
