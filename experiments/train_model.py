@@ -6,7 +6,7 @@ Usage
 import os
 import argparse
 import sys
-# import tensorflow as tf
+import tensorflow as tf
 import random
 import csv
 import numpy as np
@@ -15,12 +15,13 @@ from gym.spaces import Box
 import time
 from time import strftime
 from pathlib import Path
-
+# Added modules directory"""
+sys.path.append("/Users/gilbertbahatij/mbrl-traffic")
 
 from mbrl_traffic.utils.replay_buffer import ReplayBuffer
 from mbrl_traffic.utils.train import parse_model_params
 from mbrl_traffic.utils.train import get_model_params_from_args
-# from mbrl_traffic.utils.tf_util import make_session
+from mbrl_traffic.utils.tf_util import make_session # """FIXME"""
 
 
 VALID_NETWORK_TYPES = [
@@ -52,7 +53,7 @@ def parse_args(args):
 
     # required input parameters
     parser.add_argument(
-        'network_type', type=str,
+        '--network_type', type=str, default=VALID_NETWORK_TYPES[0],  # FIXME
         help='the type of network being used. For example: "ring-1-lane". The '
              'list of possible options can be found in the data folder in the '
              'same location as this script.')
@@ -68,7 +69,7 @@ def parse_args(args):
              'car-following dynamics. The possible options can be found in '
              'the <network_type>/baseline folder.')
     parser.add_argument(
-        '--subset', type=str, default="",
+        '--subset', type=str, default="65",  # FIXME
         help='the subset of the datasets in the provided folder that should '
              'be used, separated by commas. For example, a valid subset when '
              'using the 1-lane ring dataset is "65,70,75". If not specified, '
@@ -251,10 +252,10 @@ def create_replay_buffer(args):
         "states": np.array([
             dataset[train_size + i][0] for i in range(test_size)
         ]),
-        "actions": np.array([
+        "next_states": np.array([
             dataset[train_size + i][1] for i in range(test_size)
         ]),
-        "next_states": np.array([
+        "actions": np.array([
             dataset[train_size + i][2] for i in range(test_size)
         ]),
     }
@@ -370,32 +371,40 @@ def main(args):
         "results/{}/{}/{}".format(args.network_type, args.simulation_type, now))
     Path(directory).mkdir(parents=True, exist_ok=True)
 
-    # # Create a tensorflow session.
-    # graph = tf.Graph()
-    # with graph.as_default():
-    #     sess = make_session(num_cpu=3, graph=graph)
-    #
-    # # Create the replay buffer and the testing set.
-    # replay_buffer, testing_set = create_replay_buffer(args)
-    #
+
+    # Create a tensorflow session.
+    graph = tf.Graph()
+    with graph.as_default():
+        sess = make_session(num_cpu=3, graph=graph)
+
+    # Create the replay buffer and the testing set.
+    replay_buffer, testing_set = create_replay_buffer(args)
+
     # # Create the model.
-    # model = create_model(args, sess, replay_buffer)
+    model = create_model(args, sess, replay_buffer)
 
     # TODO
-    # with sess.as_default(), graph.as_default():
-    #     # Perform any model initialization that may be necessary.
-    #     model.initialize()
-    #
-    #     for i in range(args.steps):
-    #         # Perform the training procedure.
-    #         train_loss = model.update()
-    #
-    #         # Evaluate the performance of the model on the training set.
-    #         test_loss = model.compute_loss(
-    #             states=testing_set["states"],
-    #             actions=testing_set["actions"],
-    #             next_states=testing_set["next_states"],
-    #         )git 
+    with sess.as_default(), graph.as_default():
+        # Perform any model initialization that may be necessary.
+        model.initialize()
+
+        for i in range(args.steps):
+            # Perform the training procedure.
+            train_loss = model.update()
+
+            # Evaluate the performance of the model on the training set.
+
+            # randomly choose an index for 1 state transition
+            index_ = np.random.randint(low=0, high=len(testing_set["states"]))
+            states_ = testing_set["states"][index_]
+            next_states_ = testing_set["next_states"][index_]
+            actions_ = testing_set["actions"][index_]
+
+            test_loss = model.compute_loss(
+                states=states_,
+                actions=actions_,
+                next_states=next_states_,
+            )
     #
             # # Log the results and store the model parameters.
             # if i % args.log_interval == 0:

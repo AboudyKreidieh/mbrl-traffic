@@ -14,8 +14,8 @@ from mbrl_traffic.utils.optimizers import NelderMead
 from mbrl_traffic.utils.optimizers import GeneticAlgorithm
 from mbrl_traffic.utils.optimizers import CrossEntropyMethod
 from mbrl_traffic.envs.params.ring import flow_params as ring_params
-from mbrl_traffic.envs.params.merge import flow_params as merge_params
-from mbrl_traffic.envs.params.highway import flow_params as highway_params
+# from mbrl_traffic.envs.params.merge import flow_params as merge_params
+# from mbrl_traffic.envs.params.highway import flow_params as highway_params
 
 
 # =========================================================================== #
@@ -29,29 +29,37 @@ LWR_MODEL_PARAMS = dict(
     # time discretization (in seconds/step)
     dt=0.5,
     # maximum density term in the model (in veh/m)
-    rho_max=None,  # FIXME
+    rho_max=1,  # FIXME
     # maximum possible density of the network (in veh/m)
     rho_max_max=1,
     # initial speed limit of the model. If not actions are provided during the
     # simulation procedure, this value is kept constant throughout the
     # simulation
-    v_max=None,  # FIXME
+    v_max=11,  # FIXME
     # max speed limit that the network can be assigned
     v_max_max=30,
     # the name of the macroscopic stream model used to denote relationships
     # between the current speed and density. Must be one of {"greenshield"}
-    stream_model=None,  # FIXME
+    stream_model="greenshield",  # FIXME
     # exponent of the Green-shield velocity function
-    lam=None,  # FIXME
+    lam=1,  # FIXME
     # conditions at road left and right ends; should either dict or string ie.
     # {'constant_both': ((density, speed),(density, speed))}, constant value of
     # both ends loop, loop edge values as a ring extend_both, extrapolate last
     # value on both ends
     boundary_conditions="loop",
     # the optimizer class to use when training the model parameters
-    optimizer_cls="GeneticAlgorithm",
+    optimizer_cls="NelderMead",
 )
 
+# FIXME
+# Only works for NelderMead
+current_rho_max = LWR_MODEL_PARAMS["rho_max"]
+current_v_max = LWR_MODEL_PARAMS["v_max"]
+current_lam = LWR_MODEL_PARAMS["lam"]
+x0 = [current_rho_max, current_v_max, current_lam]
+
+optimizer_params = {"x0": x0}
 
 # =========================================================================== #
 #                        Model parameters for ARZModel                        #
@@ -151,6 +159,7 @@ SAC_POLICY_PARAMS = dict(
 # =========================================================================== #
 #                         Command-line parser methods                         #
 # =========================================================================== #
+
 
 def parse_params():
     """Parse training options user can specify in command line.
@@ -298,7 +307,7 @@ def parse_model_params(parser):
     # choose the model
     parser.add_argument(
         '--model',
-        type=str, default="FeedForwardModel",
+        type=str, default="LWRModel",  # FIXME
         help='the type of model being trained. Must be one of: LWRModel, '
              'ARZModel, NonLocalModel, NoOpModel, or FeedForwardModel.')
 
@@ -600,6 +609,7 @@ def get_model_params_from_args(args):
             "lam": args.lam,
             "boundary_conditions": args.boundary_conditions,
             "optimizer_cls": optimizer_cls,
+            "optimizer_params": optimizer_params #FIXME
         }
 
     elif args.model == "ARZModel":

@@ -64,7 +64,7 @@ class NelderMead(Optimizer):
         )
 
         self.x0 = x0
-        self.bnds = (param_low, param_high)
+        self.bnds = [(low, high) for low, high in zip(param_low, param_high)]
         self.options = {
             'disp': disp,
             'initial_simplex': initial_simplex,

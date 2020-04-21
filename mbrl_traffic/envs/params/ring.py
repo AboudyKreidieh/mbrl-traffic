@@ -50,11 +50,17 @@ flow_params = dict(
     simulator='traci',
 
     # sumo-related parameters (see flow.core.params.SumoParams)
+    #  FIXME
+    #  use_ballistic=True was returning an error,
+    # sim=SumoParams(
+    #     use_ballistic=True,
+    #     render=True,
+    #     sim_step=0.5,
+    # ),
     sim=SumoParams(
-        use_ballistic=True,
-        render=True,
-        sim_step=0.5,
-    ),
+            render=True,
+            sim_step=0.5,
+        ),
 
     # environment related parameters (see flow.core.params.EnvParams)
     env=EnvParams(

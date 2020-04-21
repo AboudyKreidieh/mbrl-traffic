@@ -134,9 +134,9 @@ class LWRModel(Model):
 
         # Create the optimizer object.
         self.optimizer = optimizer_cls(
-            param_low=None,  # FIXME
-            param_high=None,  # FIXME
-            fitness_fn=None,  # FIXME
+            param_low=[(0.0, 0.0, 0)],  # FIXME
+            param_high=[(self.rho_max_max, self.v_max_max, 5)],  # FIXME
+            fitness_fn=self.compute_training_loss,  # FIXME
             verbose=verbose,
             **optimizer_params
         )
@@ -274,17 +274,45 @@ class LWRModel(Model):
         model_params, error = self.optimizer.solve()
 
         # Save the new model parameters.
-        pass  # TODO
+        self.rho_max = model_params[0]
+        self.v_max = model_params[1]
+        self.lam = model_params[2]
 
         return error
+
+    def compute_training_loss(self, x):
+
+        self.rho_max = x[0]
+        self.v_max = x[1]
+        self.lam = x[2]
+
+        # randomly choose an index for 1 state transition
+        index_ = np.random.randint(low=0, high=len(self.replay_buffer.obs_t))
+        states = self.replay_buffer.obs_t[index_]
+        true_next_states = self.replay_buffer.obs_tp1[index_]  # should be [densities,velocities] FIXME
+
+        # run simulation step
+        expected_next_states = self.get_next_obs(states, action=None)
+
+        # FIXME
+        # lwr_density_pred = expected_next_states[:int(expected_next_states.shape[0] / 2)] # get densities only
+        # # lwr_speeds_pred = expected_next_states[int(expected_next_states.shape[0] / 2):] # get speeds
+        lwr_pred = expected_next_states
+
+        # loss function; root mean square error
+        training_loss = np.sqrt(np.mean((true_next_states - lwr_pred) ** 2))
+
+        return training_loss
 
     def compute_loss(self, states, actions, next_states):
         """See parent class."""
         # Compute the predicted next states.
-        # expected_next_states = self.get_next_obs(states, actions)
+        expected_next_states = self.get_next_obs(states, actions)  # FIXME: states should be [density, velocity]
 
         # Compute the loss.
-        return None  # FIXME
+        test_loss = np.sqrt(np.mean((next_states - expected_next_states) ** 2))
+
+        return test_loss
 
     def get_td_map(self):
         """See parent class."""
