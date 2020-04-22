@@ -1,10 +1,8 @@
 """Example of vehicles in a section of the I-210."""
 import os
-from copy import deepcopy
 
 import flow.config as config
-from flow.envs.multiagent.i210 import I210MultiEnv
-from flow.envs.multiagent.i210 import ADDITIONAL_ENV_PARAMS
+from flow.envs import TestEnv
 from flow.networks.i210_subnetwork import I210SubNetwork
 from flow.networks.i210_subnetwork import EDGES_DISTRIBUTION
 from flow.core.params import SumoParams
@@ -13,6 +11,7 @@ from flow.core.params import NetParams
 from flow.core.params import VehicleParams
 from flow.core.params import InFlows
 from flow.core.params import SumoLaneChangeParams
+from flow.core.params import SumoCarFollowingParams
 from flow.core.params import InitialConfig
 from flow.controllers import IDMController
 
@@ -30,10 +29,13 @@ vehicles.add(
     lane_change_params=SumoLaneChangeParams(
         lane_change_mode="strategic",
     ),
+    car_following_params=SumoCarFollowingParams(
+        min_gap=0.5,
+    ),
     acceleration_controller=(IDMController, {
         "a": 0.3,
         "b": 2.0,
-        "noise": 0.45
+        "noise": 0.5
     }),
 )
 
@@ -41,7 +43,7 @@ inflow = InFlows()
 inflow.add(  # main highway
     veh_type="human",
     edge="119257914",
-    vehs_per_hour=8378,
+    vehs_per_hour=10000,
     depart_lane="random",
     depart_speed=23
 )
@@ -52,7 +54,7 @@ flow_params = dict(
     exp_tag='I-210_subnetwork',
 
     # name of the flow environment the experiment is running on
-    env_name=I210MultiEnv,
+    env_name=TestEnv,
 
     # name of the network class the experiment is running on
     network=I210SubNetwork,
@@ -62,15 +64,15 @@ flow_params = dict(
 
     # simulation-related parameters
     sim=SumoParams(
-        sim_step=0.8,
+        sim_step=0.5,
         render=False,
         color_by_speed=True,
     ),
 
     # environment related parameters (see flow.core.params.EnvParams)
     env=EnvParams(
-        horizon=4500,
-        additional_params=deepcopy(ADDITIONAL_ENV_PARAMS),
+        horizon=3600,
+        sims_per_step=2,
     ),
 
     # network-related parameters (see flow.core.params.NetParams and the

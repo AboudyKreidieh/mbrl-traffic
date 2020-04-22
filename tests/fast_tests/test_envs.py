@@ -153,8 +153,12 @@ class TestParams(unittest.TestCase):
             self.assertEqual(actual_flow_params[param].__name__,
                              expected_flow_params[param].__name__)
 
-    def test_highway(self):
-        """Check the validity of the flow_params dict in params/highway.py."""
+    def test_highway_single(self):
+        """Check the validity of flow_params in params/highway_single.py."""
+        pass  # TODO
+
+    def test_highway_multi(self):
+        """Check the validity of flow_params in params/highway_multi.py."""
         pass  # TODO
 
 

@@ -12,7 +12,10 @@ from flow.core.params import AimsunParams
 
 from mbrl_traffic.envs.params.ring import flow_params as ring_params
 from mbrl_traffic.envs.params.merge import flow_params as merge_params
-from mbrl_traffic.envs.params.highway import flow_params as highway_params
+from mbrl_traffic.envs.params.highway_multi import flow_params \
+    as highway_multi_params
+from mbrl_traffic.envs.params.highway_single import flow_params \
+    as highway_single_params
 from mbrl_traffic.envs.params.ring import RING_LENGTH, NUM_LANES
 
 
@@ -77,8 +80,10 @@ if __name__ == "__main__":
         flow_params['net'].additional_params['lanes'] = flags.ring_lanes
     elif env_name == "merge":
         flow_params = deepcopy(merge_params)
-    elif env_name == "highway":
-        flow_params = deepcopy(highway_params)
+    elif env_name == "highway-single":
+        flow_params = deepcopy(highway_single_params)
+    elif env_name == "highway-multi":
+        flow_params = deepcopy(highway_multi_params)
     else:
         raise ValueError("exp_config must be one of 'ring' or 'highway'")
 
