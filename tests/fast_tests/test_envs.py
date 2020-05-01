@@ -1,5 +1,8 @@
 """Tests for the scripts in mbrl_traffic/envs."""
 import unittest
+import numpy as np
+import random
+from copy import deepcopy
 
 from flow.core.params import SumoParams
 from flow.core.params import EnvParams
@@ -13,7 +16,11 @@ from flow.networks import MergeNetwork
 
 from mbrl_traffic.envs.params.ring import flow_params as ring_params
 from mbrl_traffic.envs.params.merge import flow_params as merge_params
-# from mbrl_traffic.envs.params.highway import flow_params as highway_params
+from mbrl_traffic.envs.av import AVEnv
+from mbrl_traffic.envs.av import AVClosedEnv
+from mbrl_traffic.envs.av import AVOpenEnv
+from mbrl_traffic.envs.av import CLOSED_ENV_PARAMS
+from mbrl_traffic.envs.av import OPEN_ENV_PARAMS
 
 
 class TestParams(unittest.TestCase):
@@ -32,12 +39,14 @@ class TestParams(unittest.TestCase):
                 sim_step=0.5,
             ),
             env=EnvParams(
-                horizon=7200,
+                horizon=1800,
+                sims_per_step=2,
+                warmup_steps=50,
                 additional_params={
                     'max_accel': 3,
                     'max_decel': 3,
-                    'target_velocity': 10,
                     'sort_vehicles': False,
+                    'target_velocity': 10
                 },
             ),
             net=NetParams(
@@ -51,10 +60,12 @@ class TestParams(unittest.TestCase):
             initial=InitialConfig(
                 spacing="random",
                 min_gap=0.5,
+                shuffle=True,
             ),
         )
 
-        actual_flow_params = ring_params.copy()
+        actual_flow_params = deepcopy(ring_params)
+        self.maxDiff = None
 
         # check the inflows
         self.assertEqual(actual_flow_params["net"].inflows.__dict__,
@@ -125,7 +136,7 @@ class TestParams(unittest.TestCase):
             ),
         )
 
-        actual_flow_params = merge_params.copy()
+        actual_flow_params = deepcopy(merge_params)
 
         # check the inflows
         self.assertEqual(actual_flow_params["net"].inflows.__dict__,
@@ -142,8 +153,12 @@ class TestParams(unittest.TestCase):
             self.assertEqual(actual_flow_params[param].__name__,
                              expected_flow_params[param].__name__)
 
-    def test_highway(self):
-        """Check the validity of the flow_params dict in params/highway.py."""
+    def test_highway_single(self):
+        """Check the validity of flow_params in params/highway_single.py."""
+        pass  # TODO
+
+    def test_highway_multi(self):
+        """Check the validity of flow_params in params/highway_multi.py."""
         pass  # TODO
 
 
@@ -165,14 +180,318 @@ class TestAV(unittest.TestCase):
     """Tests the automated vehicles environment."""
 
     def setUp(self):
+        self.sim_params = deepcopy(ring_params)["sim"]
+        self.sim_params.render = False
+
+        # for AVClosedEnv
+        flow_params_closed = deepcopy(ring_params)
+
+        self.network_closed = flow_params_closed["network"](
+            name="test_closed",
+            vehicles=flow_params_closed["veh"],
+            net_params=flow_params_closed["net"],
+        )
+        self.env_params_closed = flow_params_closed["env"]
+        self.env_params_closed.additional_params = deepcopy(CLOSED_ENV_PARAMS)
+
+        # for AVOpenEnv
+        flow_params_open = deepcopy(merge_params)
+
+        self.network_open = flow_params_open["network"](
+            name="test_closed",
+            vehicles=flow_params_open["veh"],
+            net_params=flow_params_open["net"],
+        )
+        self.env_params_open = flow_params_open["env"]
+        self.env_params_open.additional_params = deepcopy(OPEN_ENV_PARAMS)
+
+    def test_base_env(self):
+        """Validate the functionality of the AVEnv class.
+
+        This tests checks for the following cases:
+
+        1. that additional_env_params cause an Exception to be raised if not
+           properly passed
+        2. that the observation space matches its expected values
+           a. for the single lane case
+           b. for the multi-lane case
+        3. that the action space matches its expected values
+           a. for the single lane case
+           b. for the multi-lane case
+        4. that the observed vehicle IDs after a reset matches its expected
+           values
+           a. for the single lane case
+           b. for the multi-lane case
+        """
+        # test case 1
+        self.assertTrue(
+            test_additional_params(
+                env_class=AVEnv,
+                sim_params=self.sim_params,
+                network=self.network_open,
+                additional_params={
+                    "max_accel": 3,
+                    "max_decel": 3,
+                    "penalty": 1,
+                },
+            )
+        )
+
+        # Set a random seed.
+        random.seed(0)
+        np.random.seed(0)
+
+        # Create a single lane environment.
+        env_single = AVEnv(
+            env_params=self.env_params_closed,
+            sim_params=self.sim_params,
+            network=self.network_closed
+        )
+
+        # Create a multi-lane environment.
+        env_multi = None  # TODO
+        del env_multi  # TODO: remove
+
+        # test case 2.a
+        self.assertTrue(
+            test_space(
+                gym_space=env_single.observation_space,
+                expected_size=5 * env_single.initial_vehicles.num_rl_vehicles,
+                expected_min=-float("inf"),
+                expected_max=float("inf"),
+            )
+        )
+
+        # test case 2.b
         pass  # TODO
 
-    def tearDown(self):
+        # test case 3.a
+        self.assertTrue(
+            test_space(
+                gym_space=env_single.action_space,
+                expected_size=env_single.initial_vehicles.num_rl_vehicles,
+                expected_min=-1,
+                expected_max=1,
+            )
+        )
+
+        # test case 3.b
         pass  # TODO
 
-    def test_pass(self):
-        """TODO."""
+        # test case 4.a
+        self.assertTrue(
+            test_observed(
+                env_class=AVEnv,
+                sim_params=self.sim_params,
+                network=self.network_closed,
+                env_params=self.env_params_closed,
+                expected_observed=['rl_1', 'rl_2', 'rl_3', 'rl_4', 'human_0',
+                                   'human_44', 'rl_0']
+            )
+        )
+
+        # test case 4.b
         pass  # TODO
+
+    def test_closed_env(self):
+        """Validate the functionality of the AVClosedEnv class.
+
+        This tests checks for the following cases:
+
+        1. that additional_env_params cause an Exception to be raised if not
+           properly passed
+        2, that the number of vehicles is properly modified in between resets
+        """
+        # test case 1
+        self.assertTrue(
+            test_additional_params(
+                env_class=AVClosedEnv,
+                sim_params=self.sim_params,
+                network=self.network_closed,
+                additional_params={
+                    "max_accel": 3,
+                    "max_decel": 3,
+                    "penalty": 1,
+                    "num_vehicles": [50, 75],
+                    "sort_vehicles": True,
+                },
+            )
+        )
+
+        # set a random seed to ensure the network lengths are always the same
+        # during testing
+        random.seed(1)
+
+        # test case 2
+        env = AVClosedEnv(
+            env_params=self.env_params_closed,
+            sim_params=self.sim_params,
+            network=self.network_closed
+        )
+
+        # reset the network several times and check its length
+        self.assertEqual(env.k.vehicle.num_vehicles, 50)
+        self.assertEqual(env.k.vehicle.num_rl_vehicles, 5)
+        env.reset()
+        self.assertEqual(env.k.vehicle.num_vehicles, 54)
+        self.assertEqual(env.k.vehicle.num_rl_vehicles, 5)
+        env.reset()
+        self.assertEqual(env.k.vehicle.num_vehicles, 75)
+        self.assertEqual(env.k.vehicle.num_rl_vehicles, 5)
+
+    def test_open_env(self):
+        """Validate the functionality of the AVOpenEnv class.
+
+        This tests checks for the following cases:
+
+        1. that additional_env_params cause an Exception to be raised if not
+           properly passed
+        2, that the inflow rate of vehicles is properly modified in between
+           resets
+        """
+        # test case 1
+        self.assertTrue(
+            test_additional_params(
+                env_class=AVOpenEnv,
+                sim_params=self.sim_params,
+                network=self.network_open,
+                additional_params={
+                    "max_accel": 3,
+                    "max_decel": 3,
+                    "penalty": 1,
+                    "inflows": [1000, 2000],
+                    "rl_penetration": 0.1,
+                    "num_rl": 5,
+                },
+            )
+        )
+
+        # test case 2
+        pass  # TODO
+
+
+###############################################################################
+#                              Utility methods                                #
+###############################################################################
+
+def test_additional_params(env_class,
+                           sim_params,
+                           network,
+                           additional_params):
+    """Test that the environment raises an Error in any param is missing.
+
+    Parameters
+    ----------
+    env_class : flow.envs.Env type
+        blank
+    sim_params : flow.core.params.SumoParams
+        sumo-specific parameters
+    network : flow.networks.Network
+        network that works for the environment
+    additional_params : dict
+        the valid and required additional parameters for the environment in
+        EnvParams
+
+    Returns
+    -------
+    bool
+        True if the test passed, False otherwise
+    """
+    for key in additional_params.keys():
+        # remove one param from the additional_params dict
+        new_add = deepcopy(additional_params)
+        del new_add[key]
+
+        try:
+            env_class(
+                sim_params=sim_params,
+                network=network,
+                env_params=EnvParams(additional_params=new_add)
+            )
+            # if no KeyError is raised, the test has failed, so return False
+            return False
+        except KeyError:
+            # if a KeyError is raised, test the next param
+            pass
+
+    # make sure that add all params does not lead to an error
+    try:
+        env_class(
+            sim_params=sim_params,
+            network=network,
+            env_params=EnvParams(additional_params=deepcopy(additional_params))
+        )
+    except KeyError:
+        # if a KeyError is raised, the test has failed, so return False
+        return False
+
+    # if removing all additional params led to KeyErrors, the test has passed,
+    # so return True
+    return True
+
+
+def test_space(gym_space, expected_size, expected_min, expected_max):
+    """Test that an action or observation space is the correct size and bounds.
+
+    Parameters
+    ----------
+    gym_space : gym.spaces.Box
+        gym space object to be tested
+    expected_size : int
+        expected size
+    expected_min : float or array_like
+        expected minimum value(s)
+    expected_max : float or array_like
+        expected maximum value(s)
+
+    Returns
+    -------
+    bool
+        True if the test passed, False otherwise
+    """
+    return gym_space.shape[0] == expected_size \
+        and all(gym_space.high == expected_max) \
+        and all(gym_space.low == expected_min)
+
+
+def test_observed(env_class,
+                  sim_params,
+                  network,
+                  env_params,
+                  expected_observed):
+    """Test that the observed vehicles in the environment are as expected.
+
+    Parameters
+    ----------
+    env_class : flow.envs.Env class
+        blank
+    sim_params : flow.core.params.SumoParams
+        sumo-specific parameters
+    network : flow.networks.Network
+        network that works for the environment
+    env_params : flow.core.params.EnvParams
+        environment-specific parameters
+    expected_observed : array_like
+        expected list of observed vehicles
+
+    Returns
+    -------
+    bool
+        True if the test passed, False otherwise
+    """
+    env = env_class(sim_params=sim_params,
+                    network=network,
+                    env_params=env_params)
+    env.reset()
+    env.step(env.action_space.sample())
+    env.additional_command()
+    test_mask = np.all(
+        np.array(env.k.vehicle.get_observed_ids()) ==
+        np.array(expected_observed)
+    )
+    env.terminate()
+
+    return test_mask
 
 
 if __name__ == '__main__':
