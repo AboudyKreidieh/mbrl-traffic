@@ -102,10 +102,13 @@ class FeedForwardModel(Model):
 
         self.model = []
         self.model_loss = []
+        self.model_means = []
+        self.model_logstds = []
         self.model_optimizer = []
         self.obs_ph = []
         self.obs1_ph = []
         self.action_ph = []
+        self.policy_saver = []
 
         # Create clipping terms for the model logstd. See: TODO
         self.max_logstd = tf.Variable(
@@ -140,27 +143,15 @@ class FeedForwardModel(Model):
                 scope="model_{}".format(i)
             )
             self.model.append(model)
+            self.model_means.append(mean)
+            self.model_logstds.append(logstd)
 
             # The worker model is trained to learn the change in state between
             # two time-steps.
             delta = self.obs1_ph[-1] - self.obs_ph[-1]
 
-            # Computes the log probability of choosing a specific output - used
-            # by the loss
-            dist = tfp.distributions.MultivariateNormalDiag(
-                loc=mean,
-                scale_diag=tf.exp(logstd)
-            )
-            rho_logp = dist.log_prob(delta)
-
-            # Create the model loss.
-            model_loss = -tf.reduce_mean(rho_logp)
-
-            # The additional loss term is in accordance with:
-            # https://github.com/kchua/handful-of-trials
-            model_loss += 0.01 * tf.reduce_sum(self.max_logstd) \
-                - 0.01 * tf.reduce_sum(self.min_logstd)
-
+            # compute loss
+            model_loss = self.log_loss(delta, mean, tf.exp(logstd))
             self.model_loss.append(model_loss)
 
             # Create an optimizer object.
@@ -191,6 +182,11 @@ class FeedForwardModel(Model):
                 print('  model shapes: {}'.format(critic_shapes))
                 print('  model params: {}'.format(critic_nb_params))
 
+            # saver for the policy variables
+            self.policy_saver.append(tf.compat.v1.train.Saver(
+                var_list=get_trainable_vars('model_{}'.format(i)))
+            )
+
     def _setup_model(self, obs, action, ob_space, reuse=False, scope="rho"):
         """Create the trainable parameters of the Worker dynamics model.
 
@@ -201,7 +197,7 @@ class FeedForwardModel(Model):
         action : tf.compat.v1.placeholder
             the action from the Worker policy. May be a function of the
             Manager's trainable parameters
-        ob_space : gym.spaces.*
+        ob_space : gym.spaces.*  #TODO yf do we need this? it is already an attribute
             the observation space, not including the context space
         reuse : bool
             whether or not to reuse parameters
@@ -257,16 +253,28 @@ class FeedForwardModel(Model):
     def get_next_obs(self, obs, action):
         """See parent class."""
         # Collect the expected delta observation from each model.
-        delta_obs = self.sess.run(
-            self.model,
-            feed_dict={obs_ph: obs for obs_ph in self.obs_ph}
+        delta_obs, means, logstds = self.sess.run(
+            [self.model, self.model_means, self.model_logstds],
+            feed_dict={
+                **{obs_ph: obs for obs_ph in self.obs_ph},
+                **{action_ph: action for action_ph in self.action_ph}
+            }
         )
 
         # Average all deltas together.
-        # TODO
+        # delta_obs = tf.reduce_mean(delta_obs, axis=0)
+
+        # parameters of Normal average distribution:
+        # avg_mean = sum(means) / len(means)
+        # avg_std = sum(stds) / len(stds)^2
+        avg_means = tf.reduce_mean(means, axis=0)
+        avg_stds = tf.reduce_mean(tf.exp(logstds), axis=0) / self.num_ensembles
+        delta_obs = avg_means + tf.random.normal(tf.shape(avg_means)) * avg_stds  # TODO yf sample from the dist or just get the average value?
 
         # Return the expected next step observations.
-        return obs + delta_obs
+        next_states_preds = obs + delta_obs  # TODO not sure if we will need this
+
+        return next_states_preds, avg_means, avg_stds
 
     def update(self):
         """See parent class."""
@@ -293,15 +301,35 @@ class FeedForwardModel(Model):
         vals = self.sess.run(step_ops, feed_dict=feed_dict)
 
         # Return the mean model loss.
-        return np.mean(vals[:round(len(vals)/2)])
+        return np.mean(vals[:round(len(vals) / 2)])
+
+    def log_loss(self, y_true, mean, std):
+        """See parent class."""
+        tfd = tfp.distributions
+        dist = tfd.MultivariateNormalDiag(loc=mean, scale_diag=std)
+        rho_logp = dist.log_prob(y_true)
+
+        # Create the model loss.
+        model_loss = -tf.reduce_mean(rho_logp)
+
+        # The additional loss term is in accordance with:
+        # https://github.com/kchua/handful-of-trials
+        model_loss += 0.01 * tf.reduce_sum(self.max_logstd) \
+                      - 0.01 * tf.reduce_sum(self.min_logstd)
+
+        return model_loss
 
     def compute_loss(self, states, actions, next_states):
         """See parent class."""
-        # Compute the predicted next states.
-        # expected_next_states = self.get_next_obs(states, actions)
+        # Compute prediction mean and logstd
+        _, avg_means, avg_logstds = self.get_next_obs(states, actions)
 
-        # Compute the loss.
-        return None  # FIXME
+        # compute the change in state between two time-steps.
+        delta = next_states - states
+        # compute log loss
+        model_loss = self.log_loss(delta, avg_means, tf.exp(avg_logstds))
+
+        return model_loss
 
     def get_td_map(self):
         """See parent class."""
@@ -309,8 +337,14 @@ class FeedForwardModel(Model):
 
     def save(self, save_path):  # TODO
         """See parent class."""
-        raise NotImplementedError
+        for i in range(self.num_ensembles):
+            self.policy_saver[i].save(
+                self.sess,
+                "{}/model_{}_trained_variables.ckpt".format(save_path, i))
 
     def load(self, load_path):  # TODO
         """See parent class."""
-        raise NotImplementedError
+        for i in range(self.num_ensembles):
+            self.policy_saver[i].restore(
+                self.sess,
+                "{}/model_{}_trained_variables.ckpt".format(load_path, i))

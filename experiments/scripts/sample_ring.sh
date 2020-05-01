@@ -57,6 +57,6 @@ for val in "${StringArray[@]}"; do
 
   # Run the simulations for the given number of samples
   for _ in $(seq 1 "$SAMPLES"); do
-    python simulate.py "ring" --no_render --gen_emission --ring_lanes "$LANES"
+    python simulate.py "ring" --no_render --gen_emission
   done
 done

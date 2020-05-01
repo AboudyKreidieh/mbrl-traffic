@@ -15,8 +15,9 @@ from mbrl_traffic.models import NoOpModel
 from mbrl_traffic.policies import SACPolicy
 from mbrl_traffic.policies import KShootPolicy
 from mbrl_traffic.utils.tf_util import make_session
-from mbrl_traffic.utils.misc import ensure_dir, create_env
+from mbrl_traffic.utils.misc import ensure_dir
 from mbrl_traffic.utils.replay_buffer import ReplayBuffer
+from mbrl_traffic.utils.train import create_env
 from mbrl_traffic.utils.train import LWR_MODEL_PARAMS
 from mbrl_traffic.utils.train import ARZ_MODEL_PARAMS
 from mbrl_traffic.utils.train import FEEDFORWARD_MODEL_PARAMS
@@ -24,7 +25,7 @@ from mbrl_traffic.utils.train import KSHOOT_POLICY_PARAMS
 from mbrl_traffic.utils.train import SAC_POLICY_PARAMS
 
 
-class ModelBasedRLAlgorithm(object):
+class ModelBasedRLAlgorithm:
     """Model-based RL algorithm class.
 
     Attributes
@@ -187,7 +188,6 @@ class ModelBasedRLAlgorithm(object):
         """
         self.policy = policy
         self.model = model
-        self.env_name = deepcopy(env)
         self.env = create_env(env, render, evaluate=False)
         self.eval_env = create_env(eval_env, render_eval, evaluate=True)
         self.nb_eval_episodes = nb_eval_episodes
@@ -242,7 +242,6 @@ class ModelBasedRLAlgorithm(object):
         self.epoch_q1_losses = []
         self.epoch_q2_losses = []
         self.epoch_value_losses = []
-        self.epoch_alphas = []
         self.epoch_actions = []
         self.epoch_q1s = []
         self.epoch_q2s = []
@@ -259,9 +258,9 @@ class ModelBasedRLAlgorithm(object):
 
         # Create the model variables and operations.
         if _init_setup_model:
-            self.trainable_vars = self.setup_model()
+            self.trainable_vars = self.setup_tf()
 
-    def setup_model(self):
+    def setup_tf(self):
         """Create the graph, session, policy, and summary objects."""
         self.graph = tf.Graph()
         with self.graph.as_default():
@@ -316,6 +315,7 @@ class ModelBasedRLAlgorithm(object):
             with self.sess.as_default():
                 self.sess.run(tf.compat.v1.global_variables_initializer())
                 self.policy_tf.initialize()
+                self.model_tf.initialize()
 
             return tf.compat.v1.get_collection(
                 tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)
@@ -359,13 +359,7 @@ class ModelBasedRLAlgorithm(object):
 
         return action.flatten(), q_value
 
-    def _store_transition(self,
-                          obs0,
-                          action,
-                          reward,
-                          obs1,
-                          terminal1,
-                          evaluate=False):
+    def _store_transition(self, obs0, action, reward, obs1, terminal1):
         """Store a transition in the replay buffer.
 
         Parameters
@@ -380,15 +374,17 @@ class ModelBasedRLAlgorithm(object):
             the current observation
         terminal1 : bool
             is the episode done
-        evaluate : bool
-            whether the sample is being provided by the evaluation environment.
-            If so, the data is not stored in the replay buffer.
         """
         # Scale the rewards by the provided term.
         reward *= self.reward_scale
 
-        self.policy_tf.store_transition(
-            obs0, action, reward, obs1, terminal1, evaluate)
+        self.replay_buffer.add(
+            obs_t=obs0,
+            action=action,
+            reward=reward,
+            obs_tp1=obs1,
+            done=terminal1,
+        )
 
     def learn(self,
               total_timesteps,
@@ -417,16 +413,10 @@ class ModelBasedRLAlgorithm(object):
         save_interval : int
             number of simulation steps in the training environment before the
             model is saved
-        initial_exploration_steps : int, optional
+        initial_exploration_steps : int
             number of timesteps that the policy is run before training to
             initialize the replay buffer with samples
         """
-        # Create a saver object.
-        self.saver = tf.compat.v1.train.Saver(
-            self.trainable_vars,
-            max_to_keep=total_timesteps // save_interval
-        )
-
         # Make sure that the log directory exists, and if not, make it.
         ensure_dir(log_dir)
         ensure_dir(os.path.join(log_dir, "checkpoints"))
@@ -457,7 +447,7 @@ class ModelBasedRLAlgorithm(object):
             self.obs = self.env.reset()
 
             # Collect preliminary random samples.
-            print("Collecting pre-samples...")
+            print("Collecting initial exploration samples...")
             self._collect_samples(run_steps=initial_exploration_steps,
                                   random_actions=True)
             print("Done!")
@@ -555,7 +545,10 @@ class ModelBasedRLAlgorithm(object):
         save_path : str
             Prefix of filenames created for the checkpoint
         """
-        self.saver.save(self.sess, save_path, global_step=self.total_steps)
+        save_path = "{}-{}".format(save_path, self.total_steps)
+        ensure_dir(save_path)
+        self.model_tf.save(save_path)
+        self.policy_tf.save(save_path)
 
     def load(self, load_path):
         """Load model parameters from a checkpoint.
@@ -565,7 +558,8 @@ class ModelBasedRLAlgorithm(object):
         load_path : str
             location of the checkpoint
         """
-        self.saver.restore(self.sess, load_path)
+        self.model_tf.load(load_path)
+        self.policy_tf.load(load_path)
 
     def _collect_samples(self, run_steps=None, random_actions=False):
         """Perform the sample collection operation.
@@ -632,14 +626,14 @@ class ModelBasedRLAlgorithm(object):
         the policy, and the summary information is logged to tensorboard.
         """
         # Run a step of training from batch.
-        critic_loss, actor_loss = self.policy_tf.update()
+        actor_loss, critic_loss, extra = self.policy_tf.update()
 
         # Add actor and critic loss information for logging purposes.
         self.epoch_q1_losses.append(critic_loss[0])
         self.epoch_q2_losses.append(critic_loss[1])
         self.epoch_value_losses.append(critic_loss[2])
-        self.epoch_alpha_losses.append(actor_loss[0])
-        self.epoch_actor_losses.append(actor_loss[1])
+        self.epoch_alpha_losses.append(extra["alpha_loss"])
+        self.epoch_actor_losses.append(actor_loss)
 
     def _train_model(self):
         """Perform the training operation to the model.
@@ -706,13 +700,9 @@ class ModelBasedRLAlgorithm(object):
                 obs, eval_r, done, info = env.step(eval_action)
 
                 # FIXME: maybe add a store_eval option
-                # Store a transition in the replay buffer. This is just for the
-                # purposes of calling features in the store_transition method
-                # of the policy.
-                # self.replay_buffer.store(
-                #     eval_obs, eval_action,
-                #     eval_r, obs, False, evaluate=True
-                # )
+                # Store a transition in the replay buffer.
+                # self._store_transition(
+                #     eval_obs, eval_action, eval_r, obs, done)
 
                 # Update the previous step observation.
                 eval_obs = obs.copy()
@@ -785,7 +775,6 @@ class ModelBasedRLAlgorithm(object):
         if self.policy == SACPolicy:
             combined_stats.update({
                 # Rollout statistics.
-                'rollout/alpha_mean': np.mean(self.epoch_alphas),
                 'rollout/Q1_mean': np.mean(self.epoch_q1s),
                 'rollout/Q2_mean': np.mean(self.epoch_q2s),
                 'rollout/value_mean': np.mean(self.epoch_values),

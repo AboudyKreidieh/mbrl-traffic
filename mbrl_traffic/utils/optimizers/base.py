@@ -1,7 +1,7 @@
 """Base optimizer object for macroscopic models."""
 
 
-class Optimizer(object):
+class Optimizer:
     """Base optimizer object.
 
     This object is used to train the parameters of a given model to maximize

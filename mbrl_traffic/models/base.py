@@ -1,7 +1,7 @@
 """Script containing the base model object."""
 
 
-class Model(object):
+class Model:
     """Base model object.
 
     The model object is used to estimate next-step observations given current
@@ -80,6 +80,25 @@ class Model(object):
         -------
         float
             the error associated with the current model
+        """
+        raise NotImplementedError
+
+    def log_loss(self, y_true, mean, std):
+        """Compute the Gaussian Log-Likelihood loss.
+
+        Parameters
+        ----------
+        y_true : array_like
+            (batch_size, obs_dim) matrix of actual target variable
+        mean : array_like
+            (batch_size, ac_dim) matrix of prediction means
+        std : array_like
+            (batch_size, obs_dim) matrix of prediction stds
+
+        Returns
+        -------
+        float
+            the output from the loss function
         """
         raise NotImplementedError
 
