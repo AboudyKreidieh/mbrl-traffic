@@ -19,7 +19,7 @@ from pathlib import Path
 from mbrl_traffic.utils.replay_buffer import ReplayBuffer
 from mbrl_traffic.utils.train import parse_model_params
 from mbrl_traffic.utils.train import get_model_params_from_args
-from mbrl_traffic.utils.tf_util import make_session # """FIXME"""
+from mbrl_traffic.utils.tf_util import make_session
 
 
 VALID_NETWORK_TYPES = [
