@@ -1,6 +1,7 @@
 """Script containing the genetic algorithm optimizer."""
 import numpy as np
 import heapq
+from copy import deepcopy
 
 from mbrl_traffic.utils.optimizers.base import Optimizer
 
@@ -149,7 +150,7 @@ class GeneticAlgorithm(Optimizer):
             selection = self._mutation(selection)
 
             # Step 8. Create the next generation.
-            population = selection.copy()
+            population = deepcopy(selection)
 
         # Return the individual with the best fitness.
         return population[:, np.argmax(fitness)]

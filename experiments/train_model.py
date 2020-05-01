@@ -15,8 +15,6 @@ from gym.spaces import Box
 import time
 from time import strftime
 from pathlib import Path
-# Added modules directory"""
-sys.path.append("/Users/gilbertbahatij/mbrl-traffic")
 
 from mbrl_traffic.utils.replay_buffer import ReplayBuffer
 from mbrl_traffic.utils.train import parse_model_params
@@ -183,7 +181,7 @@ def import_dataset(network_type, simulation_type, subset, warmup):
         n_sections = sum(c.startswith("speed") for c in columns)
         v = np.array(df[["speed_{}".format(i) for i in range(n_sections)]])
         d = np.array(df[["density_{}".format(i) for i in range(n_sections)]])
-        states = np.concatenate((v, d), axis=1)  # FIXME?
+        states = np.concatenate((d, v), axis=1)  # FIXME?
 
         # Add to the complete dataset (assuming no action for now).
         for i in range(states.shape[0] - warmup - 1):
@@ -392,13 +390,11 @@ def main(args):
             # Perform the training procedure.
             train_loss = model.update()
 
-            # Evaluate the performance of the model on the training set.
+            # Evaluate the performance of the model on the testing set.
 
-            # randomly choose an index for 1 state transition
-            index_ = np.random.randint(low=0, high=len(testing_set["states"]))
-            states_ = testing_set["states"][index_]
-            next_states_ = testing_set["next_states"][index_]
-            actions_ = testing_set["actions"][index_]
+            states_ = testing_set["states"]
+            next_states_ = testing_set["next_states"]
+            actions_ = testing_set["actions"]
 
             test_loss = model.compute_loss(
                 states=states_,

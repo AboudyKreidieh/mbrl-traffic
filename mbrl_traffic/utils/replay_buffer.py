@@ -110,4 +110,4 @@ class ReplayBuffer(object):
         indices = np.random.randint(0, self._size, size=self._batch_size)
 
         return self.obs_t[indices, :], self.action_t[indices, :], \
-            self.reward[indices], self.obs_tp1[indices, :], self.done[indices]
+            self.obs_tp1[indices, :], self.reward[indices],  self.done[indices]

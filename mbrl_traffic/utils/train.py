@@ -2,6 +2,9 @@
 import argparse
 import tensorflow as tf
 import gym
+from copy import deepcopy
+
+from flow.utils.registry import make_create_env
 
 from mbrl_traffic.policies import KShootPolicy
 from mbrl_traffic.policies import SACPolicy
@@ -14,8 +17,13 @@ from mbrl_traffic.utils.optimizers import NelderMead
 from mbrl_traffic.utils.optimizers import GeneticAlgorithm
 from mbrl_traffic.utils.optimizers import CrossEntropyMethod
 from mbrl_traffic.envs.params.ring import flow_params as ring_params
-# from mbrl_traffic.envs.params.merge import flow_params as merge_params
-# from mbrl_traffic.envs.params.highway import flow_params as highway_params
+from mbrl_traffic.envs.params.merge import flow_params as merge_params
+from mbrl_traffic.envs.params.highway_multi import flow_params \
+    as highway_multi_params
+from mbrl_traffic.envs.av import AVOpenEnv
+from mbrl_traffic.envs.av import AVClosedEnv
+from mbrl_traffic.envs.av import OPEN_ENV_PARAMS
+from mbrl_traffic.envs.av import CLOSED_ENV_PARAMS
 
 
 # =========================================================================== #
@@ -29,20 +37,20 @@ LWR_MODEL_PARAMS = dict(
     # time discretization (in seconds/step)
     dt=0.5,
     # maximum density term in the model (in veh/m)
-    rho_max=1,  # FIXME
+    rho_max=1,
     # maximum possible density of the network (in veh/m)
     rho_max_max=1,
     # initial speed limit of the model. If not actions are provided during the
     # simulation procedure, this value is kept constant throughout the
     # simulation
-    v_max=11,  # FIXME
+    v_max=30,
     # max speed limit that the network can be assigned
     v_max_max=30,
     # the name of the macroscopic stream model used to denote relationships
     # between the current speed and density. Must be one of {"greenshield"}
-    stream_model="greenshield",  # FIXME
+    stream_model="greenshield",
     # exponent of the Green-shield velocity function
-    lam=1,  # FIXME
+    lam=1,
     # conditions at road left and right ends; should either dict or string ie.
     # {'constant_both': ((density, speed),(density, speed))}, constant value of
     # both ends loop, loop edge values as a ring extend_both, extrapolate last
@@ -72,20 +80,22 @@ ARZ_MODEL_PARAMS = dict(
     # time discretization (in seconds/step)
     dt=0.5,
     # maximum density term in the model (in veh/m)
-    rho_max=None,  # FIXME
+    rho_max=1,
     # maximum possible density of the network (in veh/m)
     rho_max_max=1,
     # initial speed limit of the model. If not actions are provided during the
     # simulation procedure, this value is kept constant throughout the
     # simulation
-    v_max=None,  # FIXME
+    v_max=30,
     # max speed limit that the network can be assigned
     v_max_max=30,
     # time needed to adjust the velocity of a vehicle from its current value to
     # the equilibrium speed (in sec)
-    tau=None,  # FIXME
+    tau=9,
+    # max tau value that can be assigned
+    tau_max=25,
     # exponent of the Green-shield velocity function
-    lam=None,  # FIXME
+    lam=1,
     # conditions at road left and right ends; should either dict or string ie.
     # {'constant_both': ((density, speed),(density, speed))}, constant value of
     # both ends loop, loop edge values as a ring extend_both, extrapolate last
@@ -160,9 +170,13 @@ SAC_POLICY_PARAMS = dict(
 #                         Command-line parser methods                         #
 # =========================================================================== #
 
-
-def parse_params():
+def parse_params(args):
     """Parse training options user can specify in command line.
+
+    Parameters
+    ----------
+    args : list of str
+        command-line arguments
 
     Returns
     -------
@@ -175,13 +189,41 @@ def parse_params():
         epilog="python train_agent.py \"ring\" --gamma 0.999")
 
     parser.add_argument(
-        '--env', type=str, help='the name of the environment')
+        'env_name', type=str, help='the name of the environment')
+
+    # optional input parameters
+    parser.add_argument(
+        '--n_training', type=int, default=1,
+        help='Number of training operations to perform. Each training '
+             'operation is performed on a new seed. Defaults to 1.')
+    parser.add_argument(
+        '--total_steps',  type=int, default=1000000,
+        help='Total number of timesteps used during training.')
+    parser.add_argument(
+        '--seed', type=int, default=1,
+        help='Sets the seed for numpy, tensorflow, and random.')
+    parser.add_argument(
+        '--log_interval', type=int, default=2000,
+        help='the number of training steps before logging training results')
+    parser.add_argument(
+        '--eval_interval', type=int, default=50000,
+        help='number of simulation steps in the training environment before '
+             'an evaluation is performed')
+    parser.add_argument(
+        '--save_interval', type=int, default=50000,
+        help='number of simulation steps in the training environment before '
+             'the model is saved')
+    parser.add_argument(
+        '--initial_exploration_steps', type=int, default=10000,
+        help='number of timesteps that the policy is run before training to '
+             'initialize the replay buffer with samples')
 
     parser = parse_algorithm_params(parser)
     parser = parse_policy_params(parser)
     parser = parse_model_params(parser)
 
-    return parser
+    flags, _ = parser.parse_known_args(args)
+    return flags
 
 
 def parse_algorithm_params(parser):
@@ -307,7 +349,7 @@ def parse_model_params(parser):
     # choose the model
     parser.add_argument(
         '--model',
-        type=str, default="LWRModel",  # FIXME
+        type=str, default="LWRModel",  # FIXME: was NoOpModel
         help='the type of model being trained. Must be one of: LWRModel, '
              'ARZModel, NonLocalModel, NoOpModel, or FeedForwardModel.')
 
@@ -377,8 +419,8 @@ def parse_model_params(parser):
 
     # parameters for ARZModel
     parser.add_argument(
-        '--tau',
-        type=str, default=ARZ_MODEL_PARAMS["tau"],
+        '--tau_arz',
+        type=float, default=ARZ_MODEL_PARAMS["tau"],
         help='time needed to adjust the velocity of a vehicle from its '
              'current value to the equilibrium speed (in sec). Used as an '
              'input parameter to the ARZModel object.')
@@ -390,7 +432,7 @@ def parse_model_params(parser):
         help='the model learning rate. Used as an input parameter to the '
              'FeedForwardModel object.')
     parser.add_argument(
-        '--layer_norm',
+        '--layer_norm_model',
         action="store_true",
         help='whether to enable layer normalization. Used as an input '
              'parameter to the FeedForwardModel object.')
@@ -426,20 +468,7 @@ def get_algorithm_params_from_args(args):
     dict
         the parameters for the algorithm as specified in the command line
     """
-    # Collect the training and evaluation environments.
-    env = create_env(args.env, args.render, evaluate=False)
-    eval_env = create_env(args.env, args.render_eval, evaluate=True) \
-        if args.evaluate else None
-
-    # Collect the policy and model attributes.
-    model_cls, model_params = get_model_params_from_args(args)
-    policy_cls, policy_params = get_policy_params_from_args(args)
-
     return {
-        "policy": policy_cls,
-        "model": model_cls,
-        "env": env,
-        "eval_env": eval_env,
         "nb_eval_episodes": args.nb_eval_episodes,
         "policy_update_freq": args.policy_update_freq,
         "model_update_freq": args.model_update_freq,
@@ -451,13 +480,11 @@ def get_algorithm_params_from_args(args):
         "render_eval": args.render_eval,
         "eval_deterministic": True,  # this is kept fixed currently
         "verbose": args.verbose,
-        "policy_kwargs": policy_params,
-        "model_kwargs": model_params,
         "_init_setup_model": True
     }
 
 
-def create_env(env, render=False, evaluate=False):
+def create_env(env, render=False, evaluate=False, emission_path=None):
     """Return, and potentially create, the environment.
 
     Parameters
@@ -468,39 +495,71 @@ def create_env(env, render=False, evaluate=False):
         whether to render the environment
     evaluate : bool
         specifies whether this is a training or evaluation environment
+    emission_path : str
+        path to the folder in which to create the emissions output for Flow
+        environments. Emissions output is not generated if this value is not
+        specified.
 
     Returns
     -------
     gym.Env or list of gym.Env
         gym-compatible environment(s)
     """
+    # No environment (for evaluation environments):
+    if env is None:
+        return None
+
     # Mixed-autonomy traffic environments
     if env.startswith("av"):
         if env.endswith("ring"):
-            flow_params = ring_params.copy()
+            flow_params = deepcopy(ring_params)
+            flow_params["env_name"] = AVClosedEnv
+            flow_params["env"].additional_params = deepcopy(CLOSED_ENV_PARAMS)
         elif env.endswith("merge"):
-            flow_params = merge_params.copy()
-        elif env.endswith("highway"):
-            flow_params = highway_params.copy()
+            flow_params = deepcopy(merge_params)
+            flow_params["env_name"] = AVOpenEnv
+            flow_params["env"].additional_params = deepcopy(OPEN_ENV_PARAMS)
+        elif env.endswith("highway-multi"):
+            flow_params = deepcopy(highway_multi_params)
+            flow_params["env_name"] = AVOpenEnv
+            flow_params["env"].additional_params = deepcopy(OPEN_ENV_PARAMS)
         else:
             raise ValueError("Unknown environment type: {}".format(env))
 
-        flow_params["env"] = None  # FIXME
-        env = None  # FIXME
+        # Update the render, evaluation, and emission_path attributes.
+        flow_params["sim"].render = render
+        flow_params["env"].evaluate = evaluate
+        flow_params["sim"].emission_path = emission_path
+
+        # Create the environment.
+        env_creator, _ = make_create_env(flow_params)
+        env = env_creator()
 
     # Variable speed limit environments
     elif env.startswith("vsl"):
         if env.endswith("ring"):
-            flow_params = ring_params.copy()
+            flow_params = deepcopy(ring_params)
+            flow_params["env_name"] = None  # FIXME
+            flow_params["env"].additional_params = None  # FIXME
         elif env.endswith("merge"):
-            flow_params = merge_params.copy()
-        elif env.endswith("highway"):
-            flow_params = highway_params.copy()
+            flow_params = deepcopy(merge_params)
+            flow_params["env_name"] = None  # FIXME
+            flow_params["env"].additional_params = None  # FIXME
+        elif env.endswith("highway-multi"):
+            flow_params = deepcopy(highway_multi_params)
+            flow_params["env_name"] = None  # FIXME
+            flow_params["env"].additional_params = None  # FIXME
         else:
             raise ValueError("Unknown environment type: {}".format(env))
 
-        flow_params["env"] = None  # FIXME
-        env = None  # FIXME
+        # Update the render, evaluation, and emission_path attributes.
+        flow_params["sim"].render = render
+        flow_params["env"].evaluate = evaluate
+        flow_params["sim"].emission_path = emission_path
+
+        # Create the environment.
+        env_creator, _ = make_create_env(flow_params)
+        env = env_creator()
 
     # MuJoCo and other gym environments
     elif isinstance(env, str):
@@ -621,7 +680,7 @@ def get_model_params_from_args(args):
             "rho_max_max": args.rho_max_max,
             "v_max": args.v_max,
             "v_max_max": args.v_max_max,
-            "tau": args.tau,
+            "tau": args.tau_arz,
             "lam": args.lam,
             "boundary_conditions": args.boundary_conditions,
             "optimizer_cls": optimizer_cls,
@@ -641,7 +700,7 @@ def get_model_params_from_args(args):
         model_cls = FeedForwardModel
         model_params = {
             "model_lr": args.model_lr,
-            "layer_norm": args.layer_norm,
+            "layer_norm": args.layer_norm_model,
             "layers": FEEDFORWARD_MODEL_PARAMS["layers"],
             "act_fun": FEEDFORWARD_MODEL_PARAMS["act_fun"],
             "stochastic": args.stochastic,

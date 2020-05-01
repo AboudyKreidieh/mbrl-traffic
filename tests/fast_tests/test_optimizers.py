@@ -122,6 +122,7 @@ class TestGeneticAlgorithm(unittest.TestCase):
            Expected solution: 5.13977943
         """
         optimizer = None  # TODO
+        del optimizer
 
         # test case 1  TODO
         # def fitness_fn(x):
@@ -172,6 +173,7 @@ class TestCrossEntropyMethod(unittest.TestCase):
            Expected solution: 5.13977943
         """
         optimizer = None  # TODO
+        del optimizer
 
         # test case 1  TODO
         # def fitness_fn(x):
