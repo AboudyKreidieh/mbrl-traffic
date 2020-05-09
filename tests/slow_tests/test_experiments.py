@@ -8,11 +8,17 @@ from mbrl_traffic.models import LWRModel
 from mbrl_traffic.models import ARZModel
 from mbrl_traffic.models import NoOpModel
 from mbrl_traffic.models import FeedForwardModel
+from mbrl_traffic.policies import KShootPolicy
+from mbrl_traffic.policies import SACPolicy
+from mbrl_traffic.policies import NoOpPolicy
 
+from experiments.evaluate_agent import parse_args as parse_args_evaluate_agent
+from experiments.evaluate_agent import get_model_cls as ea_get_model_cls
+from experiments.evaluate_agent import get_policy_cls as ea_get_policy_cls
 from experiments.evaluate_model import parse_args as parse_args_evaluate_model
 from experiments.evaluate_model import import_data
-from experiments.evaluate_model import get_model_cls
-from experiments.evaluate_model import get_model_ckpt
+from experiments.evaluate_model import get_model_cls as em_get_model_cls
+from experiments.evaluate_model import get_model_ckpt as em_get_model_ckpt
 from experiments.evaluate_model import main as evaluate_model
 from experiments.simulate import parse_args as parse_args_simulate
 from experiments.train_agent import main as train_agent
@@ -21,14 +27,111 @@ from experiments.train_agent import main as train_agent
 class TestEvaluateAgent(unittest.TestCase):
     """Tests the experiments/evaluate_agent.py script."""
 
-    def setUp(self):
-        pass  # TODO
+    def test_parse_args(self):
+        """Validate the functionality of the parse_args method."""
+        # test the default case
+        args = parse_args_evaluate_agent(["."])
+        self.assertDictEqual(args.__dict__, {
+            'results_dir': '.',
+            'checkpoint_num': None,
+            'runs': 1,
+            'no_render': False,
+            'gen_emission': False
+        })
 
-    def tearDown(self):
-        pass  # TODO
+        # test the updated case
+        args = parse_args_evaluate_agent([
+            '.',
+            '--checkpoint_num', '1',
+            '--runs', '2',
+            '--no_render',
+            '--gen_emission',
+        ])
+        self.assertDictEqual(args.__dict__, {
+            'results_dir': '.',
+            'checkpoint_num': 1,
+            'runs': 2,
+            'no_render': True,
+            'gen_emission': True
+        })
 
-    def test_pass(self):
+    def test_get_model_cls(self):
+        """Validate the functionality of the get_model_cls method.
+
+        This method is tested for the following cases:
+
+        1. model = "LWRModel"
+        2. model = "ARZModel"
+        3. model = "NonLocalModel"
+        4. model = "NoOpModel"
+        5. model = "FeedForwardModel"
+        6. model = "dns dl"  <-- returns a ValueError
+        """
+        # test case 1
+        self.assertEqual(ea_get_model_cls("LWRModel"), LWRModel)
+
+        # test case 2
+        self.assertEqual(ea_get_model_cls("ARZModel"), ARZModel)
+
+        # test case 3  TODO
+        # self.assertEqual(ea_get_model_cls("NonLocalModel"), NonLocalModel)
+
+        # test case 4
+        self.assertEqual(ea_get_model_cls("NoOpModel"), NoOpModel)
+
+        # test case 5
+        self.assertEqual(ea_get_model_cls("FeedForwardModel"),
+                         FeedForwardModel)
+
+        # test case 6
+        self.assertRaises(ValueError, ea_get_model_cls, model="dns dl")
+
+    def test_get_policy_cls(self):
+        """Validate the functionality of the get_policy_cls method.
+
+        This method is tested for the following cases:
+
+        1. policy = KShootPolicy
+        2. policy = SACPolicy
+        3. policy = NoOpPolicy
+        4. policy = "dns dl"  <-- returns a ValueError
+        """
+        # test case 1
+        self.assertEqual(ea_get_policy_cls("KShootPolicy"), KShootPolicy)
+
+        # test case 2
+        self.assertEqual(ea_get_policy_cls("SACPolicy"), SACPolicy)
+
+        # test case 3
+        self.assertEqual(ea_get_policy_cls("NoOpPolicy"), NoOpPolicy)
+
+        # test case 6
+        self.assertRaises(ValueError, ea_get_policy_cls, policy="dns dl")
+
+    def test_get_ckpt_num(self):
         """TODO."""
+        pass  # TODO
+
+    def test_get_model_ckpt(self):
+        """Validate the functionality of the get_model_ckpt method.
+
+        This method is tested for the following cases:
+
+        1. TODO
+        """
+        pass  # TODO
+
+    def test_get_policy_ckpt(self):
+        """Validate the functionality of the get_policy_ckpt method.
+
+        This method is tested for the following cases:
+
+        1. TODO
+        """
+        pass  # TODO
+
+    def test_main(self):
+        """Validate the functionality of the main() method."""
         pass  # TODO
 
 
@@ -100,22 +203,23 @@ class TestEvaluateModel(unittest.TestCase):
         6. model = "dns dl"  <-- returns a ValueError
         """
         # test case 1
-        self.assertEqual(get_model_cls("LWRModel"), LWRModel)
+        self.assertEqual(em_get_model_cls("LWRModel"), LWRModel)
 
         # test case 2
-        self.assertEqual(get_model_cls("ARZModel"), ARZModel)
+        self.assertEqual(em_get_model_cls("ARZModel"), ARZModel)
 
         # test case 3  TODO
-        # self.assertEqual(get_model_cls("NonLocalModel"), None)
+        # self.assertEqual(em_get_model_cls("NonLocalModel"), None)
 
         # test case 4
-        self.assertEqual(get_model_cls("NoOpModel"), NoOpModel)
+        self.assertEqual(em_get_model_cls("NoOpModel"), NoOpModel)
 
         # test case 5
-        self.assertEqual(get_model_cls("FeedForwardModel"), FeedForwardModel)
+        self.assertEqual(em_get_model_cls("FeedForwardModel"),
+                         FeedForwardModel)
 
         # test case 6
-        self.assertRaises(ValueError, get_model_cls, model="dns dl")
+        self.assertRaises(ValueError, em_get_model_cls, model="dns dl")
 
     def test_get_model_ckpt(self):
         """Validate the functionality of the get_model_ckpt() method.
@@ -128,15 +232,15 @@ class TestEvaluateModel(unittest.TestCase):
         4. model = "LWRModel", ckpt_num = 1
         """
         # test case 1
-        self.assertEqual(get_model_ckpt("base_dir", 1, "NoOpModel"), None)
+        self.assertEqual(em_get_model_ckpt("base_dir", 1, "NoOpModel"), None)
 
         # test case 2
-        self.assertEqual(get_model_ckpt("base_dir", 1, "FeedForwardModel"),
-                         "base_dir/checkpoints/itr-1/model.meta")
+        self.assertEqual(em_get_model_ckpt("base_dir", 1, "FeedForwardModel"),
+                         "base_dir/checkpoints/itr-1/model")
 
         # test case 3
         self.assertEqual(
-            get_model_ckpt(
+            em_get_model_ckpt(
                 os.path.join(
                     os.path.dirname(os.path.realpath(__file__)),
                     "data/sample_log"
@@ -146,13 +250,13 @@ class TestEvaluateModel(unittest.TestCase):
             ),
             os.path.join(
                 os.path.dirname(os.path.realpath(__file__)),
-                "data/sample_log/checkpoints/itr-2/model.csv"
+                "data/sample_log/checkpoints/itr-2/model.json"
             )
         )
 
         # test case 4
-        self.assertEqual(get_model_ckpt("base_dir", 1, "LWRModel"),
-                         "base_dir/checkpoints/itr-1/model.csv")
+        self.assertEqual(em_get_model_ckpt("base_dir", 1, "LWRModel"),
+                         "base_dir/checkpoints/itr-1/model.json")
 
     def test_main_plot_only(self):
         """Validate the functionality of the main() method when plotting."""

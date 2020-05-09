@@ -7,9 +7,9 @@ from mbrl_traffic.utils.replay_buffer import ReplayBuffer
 from mbrl_traffic.utils.tf_util import gaussian_likelihood
 from mbrl_traffic.utils.train import create_env
 from mbrl_traffic.utils.train import parse_params
-from mbrl_traffic.utils.train import get_algorithm_params_from_args
-from mbrl_traffic.utils.train import get_policy_params_from_args
-from mbrl_traffic.utils.train import get_model_params_from_args
+# from mbrl_traffic.utils.train import get_algorithm_params_from_args
+# from mbrl_traffic.utils.train import get_policy_params_from_args
+# from mbrl_traffic.utils.train import get_model_params_from_args
 
 
 class TestReplayBuffer(unittest.TestCase):
@@ -187,6 +187,7 @@ class TestTrain(unittest.TestCase):
         3. parse_policy_params
         4. parse_model_params
         """
+        self.maxDiff = None
         # test case (default)
         args = parse_params(["vsl-ring"])
 
@@ -224,14 +225,14 @@ class TestTrain(unittest.TestCase):
             'optimizer_cls': 'GeneticAlgorithm',
             'dx': 50,
             'dt': 0.5,
-            'rho_max': None,
+            'rho_max': 1,
             'rho_max_max': 1,
-            'v_max': None,
+            'v_max': 30,
             'v_max_max': 30,
-            'lam': None,
+            'lam': 1,
             'boundary_conditions': 'loop',
-            'stream_model': None,
-            'tau_arz': None,
+            'stream_model': 'greenshield',
+            'tau_arz': 9,
             'model_lr': 1e-05,
             'layer_norm_model': False,
             'stochastic': False,

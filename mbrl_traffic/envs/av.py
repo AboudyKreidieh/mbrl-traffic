@@ -18,7 +18,7 @@ BASE_ENV_PARAMS = dict(
     penalty=1,
 )
 
-CLOSED_ENV_PARAMS = BASE_ENV_PARAMS.copy()
+CLOSED_ENV_PARAMS = deepcopy(BASE_ENV_PARAMS)
 CLOSED_ENV_PARAMS.update(dict(
     # range for the number of vehicles allowed in the network. If set to None,
     # the number of vehicles are is modified from its initial value.
@@ -28,7 +28,7 @@ CLOSED_ENV_PARAMS.update(dict(
     sort_vehicles=True,
 ))
 
-OPEN_ENV_PARAMS = BASE_ENV_PARAMS.copy()
+OPEN_ENV_PARAMS = deepcopy(BASE_ENV_PARAMS)
 OPEN_ENV_PARAMS.update(dict(
     # range for the inflows allowed in the network. If set to None, the inflows
     # are not modified from their initial value.

@@ -2,6 +2,7 @@
 import argparse
 import tensorflow as tf
 import gym
+from copy import deepcopy
 
 from flow.utils.registry import make_create_env
 
@@ -17,12 +18,18 @@ from mbrl_traffic.utils.optimizers import GeneticAlgorithm
 from mbrl_traffic.utils.optimizers import CrossEntropyMethod
 from mbrl_traffic.envs.params.ring import flow_params as ring_params
 from mbrl_traffic.envs.params.merge import flow_params as merge_params
-from mbrl_traffic.envs.params.highway import flow_params as highway_params
+from mbrl_traffic.envs.params.highway_multi import flow_params \
+    as highway_multi_params
 from mbrl_traffic.envs.av import AVOpenEnv
 from mbrl_traffic.envs.av import AVClosedEnv
 from mbrl_traffic.envs.av import OPEN_ENV_PARAMS
 from mbrl_traffic.envs.av import CLOSED_ENV_PARAMS
-
+from mbrl_traffic.envs.vsl import VSLRingEnv
+from mbrl_traffic.envs.vsl import VSLMergeEnv
+from mbrl_traffic.envs.vsl import VSLHighwayEnv
+from mbrl_traffic.envs.vsl import RING_ENV_PARAMS
+from mbrl_traffic.envs.vsl import MERGE_ENV_PARAMS
+from mbrl_traffic.envs.vsl import HIGHWAY_ENV_PARAMS
 
 # =========================================================================== #
 #                        Model parameters for LWRModel                        #
@@ -35,20 +42,20 @@ LWR_MODEL_PARAMS = dict(
     # time discretization (in seconds/step)
     dt=0.5,
     # maximum density term in the model (in veh/m)
-    rho_max=None,  # FIXME
+    rho_max=1,
     # maximum possible density of the network (in veh/m)
     rho_max_max=1,
     # initial speed limit of the model. If not actions are provided during the
     # simulation procedure, this value is kept constant throughout the
     # simulation
-    v_max=None,  # FIXME
+    v_max=30,
     # max speed limit that the network can be assigned
     v_max_max=30,
     # the name of the macroscopic stream model used to denote relationships
     # between the current speed and density. Must be one of {"greenshield"}
-    stream_model=None,  # FIXME
+    stream_model="greenshield",
     # exponent of the Green-shield velocity function
-    lam=None,  # FIXME
+    lam=1,
     # conditions at road left and right ends; should either dict or string ie.
     # {'constant_both': ((density, speed),(density, speed))}, constant value of
     # both ends loop, loop edge values as a ring extend_both, extrapolate last
@@ -70,20 +77,22 @@ ARZ_MODEL_PARAMS = dict(
     # time discretization (in seconds/step)
     dt=0.5,
     # maximum density term in the model (in veh/m)
-    rho_max=None,  # FIXME
+    rho_max=1,
     # maximum possible density of the network (in veh/m)
     rho_max_max=1,
     # initial speed limit of the model. If not actions are provided during the
     # simulation procedure, this value is kept constant throughout the
     # simulation
-    v_max=None,  # FIXME
+    v_max=30,
     # max speed limit that the network can be assigned
     v_max_max=30,
     # time needed to adjust the velocity of a vehicle from its current value to
     # the equilibrium speed (in sec)
-    tau=None,  # FIXME
+    tau=9,
+    # max tau value that can be assigned
+    tau_max=25,
     # exponent of the Green-shield velocity function
-    lam=None,  # FIXME
+    lam=1,
     # conditions at road left and right ends; should either dict or string ie.
     # {'constant_both': ((density, speed),(density, speed))}, constant value of
     # both ends loop, loop edge values as a ring extend_both, extrapolate last
@@ -472,7 +481,7 @@ def get_algorithm_params_from_args(args):
     }
 
 
-def create_env(env, render=False, evaluate=False):
+def create_env(env, render=False, evaluate=False, emission_path=None):
     """Return, and potentially create, the environment.
 
     Parameters
@@ -483,6 +492,10 @@ def create_env(env, render=False, evaluate=False):
         whether to render the environment
     evaluate : bool
         specifies whether this is a training or evaluation environment
+    emission_path : str
+        path to the folder in which to create the emissions output for Flow
+        environments. Emissions output is not generated if this value is not
+        specified.
 
     Returns
     -------
@@ -496,23 +509,24 @@ def create_env(env, render=False, evaluate=False):
     # Mixed-autonomy traffic environments
     if env.startswith("av"):
         if env.endswith("ring"):
-            flow_params = ring_params.copy()
+            flow_params = deepcopy(ring_params)
             flow_params["env_name"] = AVClosedEnv
-            flow_params["env"].additional_params = CLOSED_ENV_PARAMS.copy()
+            flow_params["env"].additional_params = deepcopy(CLOSED_ENV_PARAMS)
         elif env.endswith("merge"):
-            flow_params = merge_params.copy()
+            flow_params = deepcopy(merge_params)
             flow_params["env_name"] = AVOpenEnv
-            flow_params["env"].additional_params = OPEN_ENV_PARAMS.copy()
-        elif env.endswith("highway"):
-            flow_params = highway_params.copy()
+            flow_params["env"].additional_params = deepcopy(OPEN_ENV_PARAMS)
+        elif env.endswith("highway-multi"):
+            flow_params = deepcopy(highway_multi_params)
             flow_params["env_name"] = AVOpenEnv
-            flow_params["env"].additional_params = OPEN_ENV_PARAMS.copy()
+            flow_params["env"].additional_params = deepcopy(OPEN_ENV_PARAMS)
         else:
             raise ValueError("Unknown environment type: {}".format(env))
 
-        # Add the render and evaluation flags.
+        # Update the render, evaluation, and emission_path attributes.
         flow_params["sim"].render = render
         flow_params["env"].evaluate = evaluate
+        flow_params["sim"].emission_path = emission_path
 
         # Create the environment.
         env_creator, _ = make_create_env(flow_params)
@@ -521,23 +535,24 @@ def create_env(env, render=False, evaluate=False):
     # Variable speed limit environments
     elif env.startswith("vsl"):
         if env.endswith("ring"):
-            flow_params = ring_params.copy()
-            flow_params["env_name"] = None  # FIXME
-            flow_params["env"].additional_params = None  # FIXME
+            flow_params = deepcopy(ring_params)
+            flow_params["env_name"] = VSLRingEnv
+            flow_params["env"].additional_params = deepcopy(RING_ENV_PARAMS)
         elif env.endswith("merge"):
-            flow_params = merge_params.copy()
-            flow_params["env_name"] = None  # FIXME
-            flow_params["env"].additional_params = None  # FIXME
-        elif env.endswith("highway"):
-            flow_params = highway_params.copy()
-            flow_params["env_name"] = None  # FIXME
-            flow_params["env"].additional_params = None  # FIXME
+            flow_params = deepcopy(merge_params)
+            flow_params["env_name"] = VSLMergeEnv
+            flow_params["env"].additional_params = deepcopy(MERGE_ENV_PARAMS)
+        elif env.endswith("highway-multi"):
+            flow_params = deepcopy(highway_multi_params)
+            flow_params["env_name"] = VSLHighwayEnv
+            flow_params["env"].additional_params = deepcopy(HIGHWAY_ENV_PARAMS)
         else:
             raise ValueError("Unknown environment type: {}".format(env))
 
-        # Add the render and evaluation flags.
+        # Update the render, evaluation, and emission_path attributes.
         flow_params["sim"].render = render
         flow_params["env"].evaluate = evaluate
+        flow_params["sim"].emission_path = emission_path
 
         # Create the environment.
         env_creator, _ = make_create_env(flow_params)

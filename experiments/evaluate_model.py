@@ -29,7 +29,7 @@ def parse_args(args):
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="Simulate and evaluate a macroscopic dynamics model.",
-        epilog="python evaluate_model.py \"ring-1-lane\"")
+        epilog="python evaluate_model.py <results_dir>")
 
     # required input parameters
     parser.add_argument(
@@ -318,11 +318,11 @@ def get_model_ckpt(base_dir, ckpt_num, model):
 
     # Add the file path of the checkpoint.
     if model == "FeedForwardModel":
-        model_ckpt = os.path.join(model_ckpt, "model.meta")
+        model_ckpt = os.path.join(model_ckpt, "model")
     elif model == "NoOpModel":
         model_ckpt = None  # no checkpoint needed
     else:
-        model_ckpt = os.path.join(model_ckpt, "model.csv")
+        model_ckpt = os.path.join(model_ckpt, "model.json")
 
     return model_ckpt
 
@@ -370,8 +370,13 @@ def main(args):
                 sess=sess,
                 ob_space=None,
                 ac_space=None,
+                replay_buffer=None,
+                verbose=2,
                 **model_params
             )
+
+            # Initialize everything.
+            sess.run(tf.compat.v1.global_variables_initializer())
             model.load(model_ckpt)
 
         # Import the initial conditions.

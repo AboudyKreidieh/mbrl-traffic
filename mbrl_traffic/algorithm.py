@@ -208,17 +208,17 @@ class ModelBasedRLAlgorithm:
 
         # add the default policy kwargs to the policy_kwargs term
         if policy == KShootPolicy:
-            self.policy_kwargs.update(KSHOOT_POLICY_PARAMS.copy())
+            self.policy_kwargs.update(deepcopy(KSHOOT_POLICY_PARAMS))
         elif policy == SACPolicy:
-            self.policy_kwargs.update(SAC_POLICY_PARAMS.copy())
+            self.policy_kwargs.update(deepcopy(SAC_POLICY_PARAMS))
 
         # add the default model kwargs to the model_kwargs term
         if model == ARZModel:
-            self.model_kwargs.update(ARZ_MODEL_PARAMS.copy())
+            self.model_kwargs.update(deepcopy(ARZ_MODEL_PARAMS))
         elif model == LWRModel:
-            self.model_kwargs.update(LWR_MODEL_PARAMS.copy())
+            self.model_kwargs.update(deepcopy(LWR_MODEL_PARAMS))
         elif model == FeedForwardModel:
-            self.model_kwargs.update(FEEDFORWARD_MODEL_PARAMS.copy())
+            self.model_kwargs.update(deepcopy(FEEDFORWARD_MODEL_PARAMS))
 
         self.policy_kwargs.update(policy_kwargs or {})
         self.model_kwargs.update(model_kwargs or {})
@@ -604,7 +604,7 @@ class ModelBasedRLAlgorithm:
             self.epoch_values.append(v_value)
 
             # Update the current observation.
-            self.obs = new_obs.copy()
+            self.obs = deepcopy(new_obs)
 
             if done:
                 # Episode done.
@@ -705,7 +705,7 @@ class ModelBasedRLAlgorithm:
                 #     eval_obs, eval_action, eval_r, obs, done)
 
                 # Update the previous step observation.
-                eval_obs = obs.copy()
+                eval_obs = deepcopy(obs)
 
                 # Increment the reward and step count.
                 num_steps += 1
