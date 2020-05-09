@@ -16,11 +16,18 @@ from flow.networks import MergeNetwork
 
 from mbrl_traffic.envs.params.ring import flow_params as ring_params
 from mbrl_traffic.envs.params.merge import flow_params as merge_params
+from mbrl_traffic.envs.params.merge import flow_params as highway_params
 from mbrl_traffic.envs.av import AVEnv
 from mbrl_traffic.envs.av import AVClosedEnv
 from mbrl_traffic.envs.av import AVOpenEnv
 from mbrl_traffic.envs.av import CLOSED_ENV_PARAMS
 from mbrl_traffic.envs.av import OPEN_ENV_PARAMS
+from mbrl_traffic.envs.vsl import VSLRingEnv
+from mbrl_traffic.envs.vsl import VSLMergeEnv
+from mbrl_traffic.envs.vsl import VSLHighwayEnv
+from mbrl_traffic.envs.vsl import RING_ENV_PARAMS
+from mbrl_traffic.envs.vsl import MERGE_ENV_PARAMS
+from mbrl_traffic.envs.vsl import HIGHWAY_ENV_PARAMS
 
 
 class TestParams(unittest.TestCase):
@@ -166,14 +173,136 @@ class TestVSL(unittest.TestCase):
     """Tests the variable-speed limit environment."""
 
     def setUp(self):
-        pass  # TODO
+        self.sim_params = deepcopy(ring_params)["sim"]
+        self.sim_params.render = False
+
+        # for VSLRingEnv
+        flow_params_ring = deepcopy(ring_params)
+
+        self.network_ring = flow_params_ring["network"](
+            name="test_ring",
+            vehicles=flow_params_ring["veh"],
+            net_params=flow_params_ring["net"],
+        )
+        self.env_params_ring = flow_params_ring["env"]
+        self.env_params_ring.additional_params = RING_ENV_PARAMS.copy()
+
+        # for VSLMergeEnv
+        flow_params_merge = deepcopy(merge_params)
+
+        self.network_merge = flow_params_merge["network"](
+            name="test_merge",
+            vehicles=flow_params_merge["veh"],
+            net_params=flow_params_merge["net"],
+        )
+        self.env_params_merge = flow_params_merge["env"]
+        self.env_params_merge.additional_params = MERGE_ENV_PARAMS.copy()
+
+        # for VSLHighwayEnv
+        flow_params_highway = deepcopy(highway_params)
+
+        self.network_highway = flow_params_highway["network"](
+            name="test_highway",
+            vehicles=flow_params_highway["veh"],
+            net_params=flow_params_highway["net"],
+        )
+        self.env_params_highway = flow_params_highway["env"]
+        self.env_params_highway.additional_params = HIGHWAY_ENV_PARAMS.copy()
 
     def tearDown(self):
-        pass  # TODO
+        del self.network_ring
+        del self.network_merge
+        del self.network_highway
+        del self.env_params_ring
+        del self.env_params_merge
+        del self.env_params_highway
 
-    def test_pass(self):
-        """TODO."""
-        pass  # TODO
+    def test_vsl_ring(self):
+        """Validate the functionality of the VSLRingEnv class.
+
+        This tests checks for the following cases:
+
+        1. that additional_env_params cause an Exception to be raised if not
+           properly passed
+        2, that the number of vehicles is properly modified in between resets
+        """
+        # test case 1
+        self.assertTrue(
+            test_additional_params(
+                env_class=VSLRingEnv,
+                sim_params=self.sim_params,
+                network=self.network_ring,
+                additional_params={
+                    "max_speed_limit": 30,
+                    "min_speed_limit": 0,
+                    "num_vehicles": [50, 75]
+                },
+            )
+        )
+
+        # set a random seed to ensure the network lengths are always the same
+        # during testing
+        random.seed(1)
+
+        # test case 2  TODO
+        # env = VSLRingEnv(
+        #     env_params=self.env_params_ring,
+        #     sim_params=self.sim_params,
+        #     network=self.network_ring
+        # )
+        #
+        # # reset the network several times and check its length
+        # self.assertEqual(env.k.vehicle.num_vehicles, 50)
+        # env.reset()
+        # self.assertEqual(env.k.vehicle.num_vehicles, 75)
+
+    def test_vsl_merge(self):
+        """Validate the functionality of the VSLMergeEnv class.
+
+        This tests checks for the following cases:
+
+        1. that additional_env_params cause an Exception to be raised if not
+           properly passed
+        """
+        # test case 1
+        self.assertTrue(
+            test_additional_params(
+                env_class=VSLMergeEnv,
+                sim_params=self.sim_params,
+                network=self.network_merge,
+                additional_params={
+                    "max_speed_limit": 30,
+                    "min_speed_limit": 0,
+                    "inflows": [1000, 2000]
+                },
+            )
+        )
+
+        # test case 2 TODO
+
+    def test_vsl_highway(self):
+        """Validate the functionality of the VSLMergeEnv class.
+
+        This tests checks for the following cases:
+
+        1. that additional_env_params cause an Exception to be raised if not
+           properly passed
+        """
+        # test case 1
+        self.assertTrue(
+            test_additional_params(
+                env_class=VSLHighwayEnv,
+                sim_params=self.sim_params,
+                network=self.network_highway,
+                additional_params={
+                    "max_speed_limit": 30,
+                    "min_speed_limit": 0,
+                    "inflows": [1000, 2000]
+                },
+            )
+        )
+
+        # test case 2 TODO
 
 
 class TestAV(unittest.TestCase):

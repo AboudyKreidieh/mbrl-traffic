@@ -24,7 +24,12 @@ from mbrl_traffic.envs.av import AVOpenEnv
 from mbrl_traffic.envs.av import AVClosedEnv
 from mbrl_traffic.envs.av import OPEN_ENV_PARAMS
 from mbrl_traffic.envs.av import CLOSED_ENV_PARAMS
-
+from mbrl_traffic.envs.vsl import VSLRingEnv
+from mbrl_traffic.envs.vsl import VSLMergeEnv
+from mbrl_traffic.envs.vsl import VSLHighwayEnv
+from mbrl_traffic.envs.vsl import RING_ENV_PARAMS
+from mbrl_traffic.envs.vsl import MERGE_ENV_PARAMS
+from mbrl_traffic.envs.vsl import HIGHWAY_ENV_PARAMS
 
 # =========================================================================== #
 #                        Model parameters for LWRModel                        #
@@ -531,16 +536,16 @@ def create_env(env, render=False, evaluate=False, emission_path=None):
     elif env.startswith("vsl"):
         if env.endswith("ring"):
             flow_params = deepcopy(ring_params)
-            flow_params["env_name"] = None  # FIXME
-            flow_params["env"].additional_params = None  # FIXME
+            flow_params["env_name"] = VSLRingEnv
+            flow_params["env"].additional_params = deepcopy(RING_ENV_PARAMS)
         elif env.endswith("merge"):
             flow_params = deepcopy(merge_params)
-            flow_params["env_name"] = None  # FIXME
-            flow_params["env"].additional_params = None  # FIXME
+            flow_params["env_name"] = VSLMergeEnv
+            flow_params["env"].additional_params = deepcopy(MERGE_ENV_PARAMS)
         elif env.endswith("highway-multi"):
             flow_params = deepcopy(highway_multi_params)
-            flow_params["env_name"] = None  # FIXME
-            flow_params["env"].additional_params = None  # FIXME
+            flow_params["env_name"] = VSLHighwayEnv
+            flow_params["env"].additional_params = deepcopy(HIGHWAY_ENV_PARAMS)
         else:
             raise ValueError("Unknown environment type: {}".format(env))
 
